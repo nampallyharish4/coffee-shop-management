@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar, Toolbar, Typography, IconButton, Drawer, List, ListItem,
   ListItemIcon, ListItemText, Box, Container
 } from '@mui/material';
 import {
   Menu as MenuIcon, Dashboard as DashboardIcon, ShoppingCart,
-  Restaurant, Inventory, People, Analytics, Logout, Receipt
+  Restaurant, Inventory, People, Analytics, Logout, Receipt, ArrowBack
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
@@ -14,6 +14,7 @@ const Layout = ({ children, title }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', roles: [] },
@@ -30,6 +31,8 @@ const Layout = ({ children, title }) => {
     logout();
     navigate('/login');
   };
+
+  const isDashboard = location.pathname === '/dashboard';
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -81,6 +84,21 @@ const Layout = ({ children, title }) => {
       </Drawer>
 
       <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+        {!isDashboard && (
+          <Box sx={{ mb: 2 }}>
+            <IconButton 
+              onClick={() => navigate('/dashboard')}
+              sx={{ 
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                '&:hover': { backgroundColor: 'action.hover' }
+              }}
+            >
+              <ArrowBack />
+            </IconButton>
+          </Box>
+        )}
         <Container maxWidth="xl">
           {children}
         </Container>

@@ -1,25 +1,42 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import {
   Paper, Table, TableBody, TableCell, TableHead, TableRow, Chip, Box,
   Typography, Tabs, Tab, IconButton, Collapse, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, Snackbar, Alert
 } from '@mui/material';
-import { KeyboardArrowDown, KeyboardArrowUp, Receipt, Print, Cancel } from '@mui/icons-material';
+import { KeyboardArrowDown, KeyboardArrowUp, Receipt, Print, Cancel, CalendarToday } from '@mui/icons-material';
 import Layout from '../components/Layout';
 import { orderService } from '../services/api';
 
 const Orders = () => {
+  const { hasRole } = useAuth();
+  // Restrict view for Barista (who is not Admin or Cashier)
+  const isRestrictedView = hasRole('ROLE_BARISTA') && !hasRole('ROLE_ADMIN') && !hasRole('ROLE_CASHIER');
+
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
-  const [tab, setTab] = useState(0);
+  // If restricted, default to Active (1), else All (0)
+  const [tab, setTab] = useState(isRestrictedView ? 1 : 0);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
+
+  // Helper to get local date string YYYY-MM-DD
+  const getLocalDateString = (date = new Date()) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [countdowns, setCountdowns] = useState({});
   const [toast, setToast] = useState({ open: false, message: '', type: 'success' });
+  // Default to today (Local Time)
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
 
   useEffect(() => {
     loadOrders();
@@ -27,9 +44,16 @@ const Orders = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Enforce restricted view
+  useEffect(() => {
+    if (isRestrictedView && (tab === 0 || tab === 3)) {
+      setTab(1);
+    }
+  }, [isRestrictedView, tab]);
+
   useEffect(() => {
     filterOrders();
-  }, [tab, orders]);
+  }, [tab, orders, selectedDate]);
 
   // Countdown timer effect - updates every second
   useEffect(() => {
@@ -82,6 +106,17 @@ const Orders = () => {
       default:
         filtered = orders;
     }
+
+    // Filter by selected date if set
+    if (selectedDate) {
+      filtered = filtered.filter(order => {
+        if (!order.createdAt) return false;
+        // Convert to Local YYYY-MM-DD
+        const orderDate = getLocalDateString(new Date(order.createdAt));
+        return orderDate === selectedDate;
+      });
+    }
+    
     setFilteredOrders(filtered);
   };
 
@@ -183,22 +218,49 @@ const Orders = () => {
     setToast({ ...toast, open: false });
   };
 
+  const shouldHideOrder = (order) => {
+    if (isRestrictedView) {
+      // Baristas: Hide CREATED orders if they are still within cancellation window
+      if (order.status === 'CREATED' && getTimeRemaining(order.createdAt) > 0) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const displayOrders = filteredOrders.filter(order => !shouldHideOrder(order));
+
   return (
     <Layout title="Orders">
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight="bold" gutterBottom>
-          Placed Orders
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          View and manage all orders placed from POS
-        </Typography>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Typography variant="h5" fontWeight="bold" gutterBottom>
+            Placed Orders
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            View and manage all orders placed from POS
+          </Typography>
+        </Box>
+        <Box>
+          <TextField
+            label="Filter by Date"
+            type="date"
+            size="small"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            InputLabelProps={{
+              shrink: true,
+            }}
+            sx={{ width: 220 }}
+          />
+        </Box>
       </Box>
 
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 2 }}>
-        <Tab label={`All Orders (${orders.length})`} />
-        <Tab label={`Active (${orders.filter(o => ['CREATED', 'IN_PREPARATION', 'READY'].includes(o.status)).length})`} />
-        <Tab label={`Completed (${orders.filter(o => o.status === 'COMPLETED').length})`} />
-        <Tab label={`Cancelled (${orders.filter(o => o.status === 'CANCELLED').length})`} />
+        {!isRestrictedView && <Tab label={`All Orders (${orders.length})`} value={0} />}
+        <Tab label={`Active (${orders.filter(o => ['CREATED', 'IN_PREPARATION', 'READY'].includes(o.status) && !shouldHideOrder(o)).length})`} value={1} />
+        <Tab label={`Completed (${orders.filter(o => o.status === 'COMPLETED').length})`} value={2} />
+        {!isRestrictedView && <Tab label={`Cancelled (${orders.filter(o => o.status === 'CANCELLED').length})`} value={3} />}
       </Tabs>
 
       <Paper>
@@ -216,7 +278,7 @@ const Orders = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredOrders.length === 0 ? (
+            {displayOrders.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                   <Typography variant="body1" color="text.secondary">
@@ -225,7 +287,7 @@ const Orders = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredOrders.map(order => (
+              displayOrders.map(order => (
                 <React.Fragment key={order.id}>
                   <TableRow hover>
                     <TableCell>
@@ -272,7 +334,7 @@ const Orders = () => {
                         >
                           <Receipt />
                         </IconButton>
-                        {canCancelOrder(order) && (
+                        {canCancelOrder(order) && !isRestrictedView && (
                           <Button
                             size="small"
                             variant="outlined"
