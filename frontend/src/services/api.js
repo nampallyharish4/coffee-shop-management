@@ -60,6 +60,7 @@ export const orderService = {
   create: (order) => api.post('/orders', order),
   updateStatus: (id, status) => api.put(`/orders/${id}/status`, { status }),
   cancel: (id, reason) => api.put(`/orders/${id}/cancel`, { reason }),
+  resetRevenue: () => api.post('/orders/reset-revenue'),
 };
 
 export const inventoryService = {

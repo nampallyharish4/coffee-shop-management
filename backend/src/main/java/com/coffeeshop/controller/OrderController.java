@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -67,5 +68,14 @@ public class OrderController {
         String reason = request.get("reason");
         OrderDTO cancelled = orderService.cancelOrder(id, reason);
         return ResponseEntity.ok(new ApiResponse(true, "Order cancelled successfully", cancelled));
+    }
+
+    @PostMapping("/reset-revenue")
+    @Operation(summary = "Reset revenue by canceling all completed orders")
+    public ResponseEntity<ApiResponse> resetRevenue() {
+        int cancelledCount = orderService.resetRevenue();
+        return ResponseEntity.ok(new ApiResponse(true, 
+            "Revenue reset successfully. " + cancelledCount + " orders cancelled.", 
+            cancelledCount));
     }
 }

@@ -2,16 +2,19 @@ import React, { useState, useEffect } from 'react';
 import {
   Button, Table, TableBody, TableCell, TableHead, TableRow, Paper,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select,
-  MenuItem, FormControl, InputLabel, Switch, FormControlLabel
+  MenuItem, FormControl, InputLabel, Switch, FormControlLabel, Snackbar, Alert
 } from '@mui/material';
 import Layout from '../components/Layout';
 import { menuService, categoryService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const MenuManagement = () => {
+  const { hasRole } = useAuth();
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [open, setOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [formData, setFormData] = useState({
     name: '', categoryId: '', price: '', description: '', imageUrl: '', active: true
   });
@@ -31,24 +34,51 @@ const MenuManagement = () => {
 
   const handleSave = async () => {
     try {
-      // Ensure categoryId is a number
+      // Validate required fields
+      if (!formData.name || !formData.categoryId || !formData.price) {
+        setSnackbar({
+          open: true,
+          message: 'Please fill in all required fields (Name, Category, Price)',
+          severity: 'error'
+        });
+        return;
+      }
+
+      // Ensure categoryId and price are numbers
       const dataToSend = {
         ...formData,
-        categoryId: formData.categoryId ? Number(formData.categoryId) : null,
-        price: formData.price ? Number(formData.price) : null
+        categoryId: Number(formData.categoryId),
+        price: Number(formData.price)
       };
       
       if (editItem) {
         await menuService.update(editItem.id, dataToSend);
+        setSnackbar({
+          open: true,
+          message: 'Menu item updated successfully!',
+          severity: 'success'
+        });
       } else {
         await menuService.create(dataToSend);
+        setSnackbar({
+          open: true,
+          message: 'Menu item created successfully!',
+          severity: 'success'
+        });
       }
       setOpen(false);
       loadData();
       resetForm();
     } catch (error) {
       console.error('Failed to save menu item:', error);
-      alert(error.response?.data?.message || 'Failed to save menu item. Please check all fields and try again.');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.data || 
+                          'Failed to save menu item. Please check all fields and try again.';
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error'
+      });
     }
   };
 
@@ -56,12 +86,28 @@ const MenuManagement = () => {
     if (window.confirm('Are you sure you want to delete this menu item?')) {
       try {
         await menuService.delete(id);
+        setSnackbar({
+          open: true,
+          message: 'Menu item deleted successfully!',
+          severity: 'success'
+        });
         loadData();
       } catch (error) {
         console.error('Failed to delete menu item:', error);
-        alert(error.response?.data?.message || 'Failed to delete menu item. Please try again.');
+        setSnackbar({
+          open: true,
+          message: error.response?.data?.message || 'Failed to delete menu item. Please try again.',
+          severity: 'error'
+        });
       }
     }
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbar({ ...snackbar, open: false });
   };
 
   const resetForm = () => {
@@ -72,7 +118,15 @@ const MenuManagement = () => {
   const openDialog = (item = null) => {
     if (item) {
       setEditItem(item);
-      setFormData(item);
+      // Properly map the item data to form format
+      setFormData({
+        name: item.name || '',
+        categoryId: item.categoryId || item.category?.id || '',
+        price: item.price || '',
+        description: item.description || '',
+        imageUrl: item.imageUrl || '',
+        active: item.active !== undefined ? item.active : true
+      });
     } else {
       resetForm();
     }
@@ -81,9 +135,29 @@ const MenuManagement = () => {
 
   return (
     <Layout title="Menu Management">
-      <Button variant="contained" onClick={() => openDialog()} sx={{ mb: 2 }}>
-        Add Menu Item
-      </Button>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      {/* Only show Add Menu Item button to admins */}
+      {hasRole('ROLE_ADMIN') && (
+        <Button variant="contained" onClick={() => openDialog()} sx={{ mb: 2 }}>
+          Add Menu Item
+        </Button>
+      )}
+      
       <Paper>
         <Table>
           <TableHead>
@@ -93,7 +167,8 @@ const MenuManagement = () => {
               <TableCell>Category</TableCell>
               <TableCell>Price</TableCell>
               <TableCell>Active</TableCell>
-              <TableCell>Actions</TableCell>
+              {/* Only show Actions column to admins */}
+              {hasRole('ROLE_ADMIN') && <TableCell>Actions</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -120,76 +195,82 @@ const MenuManagement = () => {
                 <TableCell>{item.categoryName}</TableCell>
                 <TableCell>₹{item.price}</TableCell>
                 <TableCell>{item.active ? 'Yes' : 'No'}</TableCell>
-                <TableCell>
-                  <Button onClick={() => openDialog(item)}>Edit</Button>
-                  <Button onClick={() => handleDelete(item.id)} color="error">Delete</Button>
-                </TableCell>
+                {/* Only show Edit/Delete buttons to admins */}
+                {hasRole('ROLE_ADMIN') && (
+                  <TableCell>
+                    <Button onClick={() => openDialog(item)}>Edit</Button>
+                    <Button onClick={() => handleDelete(item.id)} color="error">Delete</Button>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </Paper>
 
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{editItem ? 'Edit' : 'Add'} Menu Item</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            margin="normal"
-          />
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Category</InputLabel>
-            <Select
-              value={formData.categoryId}
-              onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-            >
-              {categories.map(cat => (
-                <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            fullWidth
-            label="Price"
-            type="number"
-            value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Description"
-            multiline
-            rows={3}
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Image URL"
-            value={formData.imageUrl}
-            onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-            margin="normal"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.active}
-                onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-              />
-            }
-            label="Active"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained">Save</Button>
-        </DialogActions>
-      </Dialog>
+      {/* Only show dialog to admins */}
+      {hasRole('ROLE_ADMIN') && (
+        <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>{editItem ? 'Edit' : 'Add'} Menu Item</DialogTitle>
+          <DialogContent>
+            <TextField
+              fullWidth
+              label="Name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              margin="normal"
+            />
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={formData.categoryId}
+                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+              >
+                {categories.map(cat => (
+                  <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField
+              fullWidth
+              label="Price"
+              type="number"
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Description"
+              multiline
+              rows={3}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Image URL"
+              value={formData.imageUrl}
+              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              margin="normal"
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.active}
+                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                />
+              }
+              label="Active"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpen(false)}>Cancel</Button>
+            <Button onClick={handleSave} variant="contained">Save</Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </Layout>
   );
 };

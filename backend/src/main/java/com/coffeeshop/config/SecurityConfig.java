@@ -67,6 +67,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/menu/**").hasAnyRole("ADMIN", "CASHIER")
                 .requestMatchers("/api/orders/**").hasAnyRole("ADMIN", "CASHIER", "BARISTA")
+                .requestMatchers("/api/orders/reset-revenue").hasRole("ADMIN")  // Specific rule for reset revenue
                 .requestMatchers("/api/inventory/**").hasAnyRole("ADMIN", "INVENTORY_MANAGER")
                 .requestMatchers("/api/analytics/**").hasRole("ADMIN")
                 .anyRequest().authenticated()

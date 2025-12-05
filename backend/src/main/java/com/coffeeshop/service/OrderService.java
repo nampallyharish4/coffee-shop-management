@@ -135,6 +135,26 @@ public class OrderService {
         return convertToDTO(updated);
     }
 
+    /**
+     * Reset revenue by canceling all completed orders
+     * This effectively resets the revenue calculation to zero
+     * while preserving order history
+     */
+    @Transactional
+    public int resetRevenue() {
+        List<Order> completedOrders = orderRepository.findByStatus(Order.OrderStatus.COMPLETED);
+        int cancelledCount = 0;
+        
+        for (Order order : completedOrders) {
+            order.setStatus(Order.OrderStatus.CANCELLED);
+            order.setCancellationReason("Revenue reset");
+            orderRepository.save(order);
+            cancelledCount++;
+        }
+        
+        return cancelledCount;
+    }
+
     private void deductInventory(Order order) {
         for (OrderItem orderItem : order.getItems()) {
             MenuItem menuItem = menuItemRepository.findByIdWithIngredients(orderItem.getMenuItem().getId());

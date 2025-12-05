@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import {
   Grid, Paper, Typography, Select, MenuItem, FormControl, InputLabel, Box,
-  Table, TableBody, TableCell, TableHead, TableRow
+  Table, TableBody, TableCell, TableHead, TableRow, Button, Dialog, DialogTitle, 
+  DialogContent, DialogActions, TextField, Alert
 } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
-import { analyticsService } from '../services/api';
+import { analyticsService, orderService } from '../services/api';
 
 const Analytics = () => {
   const [range, setRange] = useState('daily');
   const [salesSummary, setSalesSummary] = useState(null);
   const [topItems, setTopItems] = useState([]);
   const [staffPerformance, setStaffPerformance] = useState([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+  const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     loadAnalytics();
@@ -36,9 +40,53 @@ const Analytics = () => {
     }
   };
 
+  const handleResetRevenue = async () => {
+    if (confirmText !== 'RESET REVENUE') {
+      setAlert({
+        open: true,
+        message: 'Please type "RESET REVENUE" to confirm',
+        severity: 'error'
+      });
+      return;
+    }
+
+    try {
+      const response = await orderService.resetRevenue();
+      setAlert({
+        open: true,
+        message: `Revenue reset successfully. ${response.data.data} orders cancelled.`,
+        severity: 'success'
+      });
+      setOpenDialog(false);
+      setConfirmText('');
+      // Reload analytics data
+      loadAnalytics();
+    } catch (error) {
+      setAlert({
+        open: true,
+        message: error.response?.data?.message || 'Failed to reset revenue',
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleCloseAlert = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setAlert({ ...alert, open: false });
+  };
+
   return (
     <Layout title="Analytics & Reports">
-      <Box sx={{ mb: 3 }}>
+      <Alert 
+        severity={alert.severity} 
+        open={alert.open} 
+        onClose={handleCloseAlert}
+        sx={{ mb: 2 }}
+      >
+        {alert.message}
+      </Alert>
+
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <FormControl sx={{ minWidth: 200 }}>
           <InputLabel>Time Range</InputLabel>
           <Select value={range} onChange={(e) => setRange(e.target.value)}>
@@ -47,6 +95,13 @@ const Analytics = () => {
             <MenuItem value="monthly">Monthly</MenuItem>
           </Select>
         </FormControl>
+        <Button 
+          variant="contained" 
+          color="error" 
+          onClick={() => setOpenDialog(true)}
+        >
+          Reset Revenue
+        </Button>
       </Box>
 
       <Grid container spacing={3}>
@@ -109,6 +164,28 @@ const Analytics = () => {
           </Paper>
         </Grid>
       </Grid>
+
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>Reset Revenue</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2 }}>
+            This action will cancel all completed orders and reset the revenue to zero. 
+            This cannot be undone.
+          </Typography>
+          <TextField
+            fullWidth
+            label="Type 'RESET REVENUE' to confirm"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+          <Button onClick={handleResetRevenue} variant="contained" color="error">
+            Reset Revenue
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Layout>
   );
 };
