@@ -70,6 +70,7 @@ public class OrderService {
 
         BigDecimal subtotal = BigDecimal.ZERO;
         
+        // First pass: Build order items and calculate totals
         for (OrderDTO.OrderItemDTO itemDTO : dto.getItems()) {
             MenuItem menuItem = menuItemRepository.findById(itemDTO.getMenuItemId())
                     .orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
@@ -102,7 +103,13 @@ public class OrderService {
             order.setPayment(payment);
         }
 
+        // Validate stock before saving
+        validateStock(order);
+
+        // Save order and deduct inventory
         Order savedOrder = orderRepository.save(order);
+        deductInventory(savedOrder);
+        
         return convertToDTO(savedOrder);
     }
 
@@ -116,7 +123,7 @@ public class OrderService {
 
         if (newStatus == Order.OrderStatus.COMPLETED) {
             order.setCompletedAt(LocalDateTime.now());
-            deductInventory(order);
+            // Inventory is already deducted at creation
         }
 
         Order updated = orderRepository.save(order);
@@ -128,8 +135,15 @@ public class OrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
+        if (order.getStatus() == Order.OrderStatus.CANCELLED) {
+             throw new IllegalStateException("Order is already cancelled");
+        }
+
         order.setStatus(Order.OrderStatus.CANCELLED);
         order.setCancellationReason(reason);
+
+        // Restore inventory when cancelling
+        restoreInventory(order);
 
         Order updated = orderRepository.save(order);
         return convertToDTO(updated);
@@ -146,13 +160,39 @@ public class OrderService {
         int cancelledCount = 0;
         
         for (Order order : completedOrders) {
-            order.setStatus(Order.OrderStatus.CANCELLED);
-            order.setCancellationReason("Revenue reset");
-            orderRepository.save(order);
-            cancelledCount++;
+            // Check if already cancelled to avoid double restoration if we were to call restoreInventory
+            if (order.getStatus() != Order.OrderStatus.CANCELLED) {
+                order.setStatus(Order.OrderStatus.CANCELLED);
+                order.setCancellationReason("Revenue reset");
+                // Optionally restore inventory here. Since it's a "revenue reset" and not a real cancellation,
+                // we might not want to restore physical stock if the coffee was already drunk.
+                // However, for data consistency, let's assume we don't restore stock for revenue reset
+                // or we can decide based on business logic. Defaulting to NO restoration for revenue reset.
+                orderRepository.save(order);
+                cancelledCount++;
+            }
         }
         
         return cancelledCount;
+    }
+
+    private void validateStock(Order order) {
+        for (OrderItem orderItem : order.getItems()) {
+            MenuItem menuItem = menuItemRepository.findByIdWithIngredients(orderItem.getMenuItem().getId());
+            
+            if (menuItem.getIngredients() != null) {
+                for (MenuIngredient ingredient : menuItem.getIngredients()) {
+                    InventoryItem inventoryItem = ingredient.getInventoryItem();
+                    BigDecimal totalRequired = ingredient.getQuantityRequired()
+                            .multiply(new BigDecimal(orderItem.getQuantity()));
+                    
+                    if (inventoryItem.getCurrentStock().compareTo(totalRequired) < 0) {
+                        throw new IllegalStateException("Insufficient stock for ingredient: " + inventoryItem.getName() + 
+                                ". Required: " + totalRequired + ", Available: " + inventoryItem.getCurrentStock());
+                    }
+                }
+            }
+        }
     }
 
     private void deductInventory(Order order) {
@@ -173,6 +213,23 @@ public class OrderService {
                     usage.setInventoryItem(inventoryItem);
                     usage.setQuantityUsed(totalRequired);
                     inventoryUsageRepository.save(usage);
+                }
+            }
+        }
+    }
+
+    private void restoreInventory(Order order) {
+        for (OrderItem orderItem : order.getItems()) {
+            MenuItem menuItem = menuItemRepository.findByIdWithIngredients(orderItem.getMenuItem().getId());
+            
+            if (menuItem.getIngredients() != null) {
+                for (MenuIngredient ingredient : menuItem.getIngredients()) {
+                    InventoryItem inventoryItem = ingredient.getInventoryItem();
+                    BigDecimal totalRestored = ingredient.getQuantityRequired()
+                            .multiply(new BigDecimal(orderItem.getQuantity()));
+                    
+                    inventoryItem.setCurrentStock(inventoryItem.getCurrentStock().add(totalRestored));
+                    inventoryItemRepository.save(inventoryItem);
                 }
             }
         }

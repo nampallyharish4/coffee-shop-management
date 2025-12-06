@@ -1,45 +1,58 @@
 import React, { useState, useEffect } from 'react';
 import {
   Grid, Card, CardContent, Typography, Button, TextField, Select, MenuItem,
-  FormControl, InputLabel, Paper, Box, IconButton, Chip, Divider, Snackbar, Alert, InputAdornment
+  FormControl, InputLabel, Paper, Box, IconButton, Chip, Divider, Snackbar, Alert, InputAdornment, Stack
 } from '@mui/material';
 import { Add, Remove, Delete, ShoppingCart, Search, ClearAll } from '@mui/icons-material';
 import Layout from '../components/Layout';
-import { menuService, orderService } from '../services/api';
+import { menuService, orderService, categoryService } from '../services/api';
 
 const POS = () => {
   const [menuItems, setMenuItems] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [filteredMenuItems, setFilteredMenuItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [cart, setCart] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [discount, setDiscount] = useState(0);
   const [message, setMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
-    loadMenuItems();
+    loadData();
   }, []);
 
-  const loadMenuItems = async () => {
+  const loadData = async () => {
     try {
-      const response = await menuService.getActive();
-      setMenuItems(response.data.data);
-      setFilteredMenuItems(response.data.data);
+      const [menuRes, catRes] = await Promise.all([
+        menuService.getActive(),
+        categoryService.getAll()
+      ]);
+      setMenuItems(menuRes.data.data);
+      setCategories(catRes.data.data);
+      setFilteredMenuItems(menuRes.data.data);
     } catch (error) {
-      setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to load menu items' });
+      setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to load data' });
     }
   };
 
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredMenuItems(menuItems);
-    } else {
-      const filtered = menuItems.filter(item =>
+    let result = menuItems;
+
+    // Filter by Category
+    if (selectedCategory !== 'ALL') {
+      result = result.filter(item => item.categoryId === selectedCategory);
+    }
+
+    // Filter by Search Query
+    if (searchQuery.trim() !== '') {
+      result = result.filter(item =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      setFilteredMenuItems(filtered);
     }
-  }, [searchQuery, menuItems]);
+
+    setFilteredMenuItems(result);
+  }, [searchQuery, selectedCategory, menuItems]);
 
   const addToCart = (item) => {
     const existing = cart.find(c => c.menuItemId === item.id);
@@ -159,6 +172,26 @@ const POS = () => {
             />
           </Box>
 
+          <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 1 }}>
+            <Chip 
+              label="All" 
+              onClick={() => setSelectedCategory('ALL')}
+              color={selectedCategory === 'ALL' ? "primary" : "default"}
+              variant={selectedCategory === 'ALL' ? "filled" : "outlined"}
+              clickable
+            />
+            {categories.map(cat => (
+              <Chip
+                key={cat.id}
+                label={cat.name}
+                onClick={() => setSelectedCategory(cat.id)}
+                color={selectedCategory === cat.id ? "primary" : "default"}
+                variant={selectedCategory === cat.id ? "filled" : "outlined"}
+                clickable
+              />
+            ))}
+          </Stack>
+
           <TextField
             fullWidth
             placeholder="Search menu items..."
@@ -178,7 +211,7 @@ const POS = () => {
           
           <Box
             sx={{
-              maxHeight: 'calc(100vh - 200px)',
+              maxHeight: 'calc(100vh - 250px)',
               overflowY: 'auto',
               pr: 1,
               '&::-webkit-scrollbar': {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Button, Table, TableBody, TableCell, TableHead, TableRow, Paper,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select,
-  MenuItem, FormControl, InputLabel, Switch, FormControlLabel, Snackbar, Alert
+  MenuItem, FormControl, InputLabel, Switch, FormControlLabel, Snackbar, Alert, Box
 } from '@mui/material';
 import Layout from '../components/Layout';
 import { menuService, categoryService } from '../services/api';
@@ -18,6 +18,7 @@ const MenuManagement = () => {
   const [formData, setFormData] = useState({
     name: '', categoryId: '', price: '', description: '', imageUrl: '', active: true
   });
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
 
   useEffect(() => {
     loadData();
@@ -153,9 +154,25 @@ const MenuManagement = () => {
 
       {/* Only show Add Menu Item button to admins */}
       {hasRole('ROLE_ADMIN') && (
-        <Button variant="contained" onClick={() => openDialog()} sx={{ mb: 2 }}>
-          Add Menu Item
-        </Button>
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Button variant="contained" onClick={() => openDialog()}>
+            Add Menu Item
+          </Button>
+          
+          <FormControl sx={{ minWidth: 200 }} size="small">
+            <InputLabel>Filter by Category</InputLabel>
+            <Select
+              value={selectedCategory}
+              label="Filter by Category"
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <MenuItem value="ALL">All Categories</MenuItem>
+              {categories.map(cat => (
+                <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
       )}
       
       <Paper>
@@ -172,7 +189,9 @@ const MenuManagement = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {items.map(item => (
+            {items
+              .filter(item => selectedCategory === 'ALL' || item.categoryId === selectedCategory || item.category?.id === selectedCategory)
+              .map(item => (
               <TableRow key={item.id}>
                 <TableCell>
                   {item.imageUrl && (
