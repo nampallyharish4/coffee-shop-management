@@ -38,8 +38,8 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         initializeRoles();
         initializeUsers();
-        // initializeInventory();
-        // initializeMenu();
+        initializeInventory();
+        initializeMenu();
     }
 
     private void initializeRoles() {

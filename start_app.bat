@@ -14,7 +14,7 @@ echo Both services are starting in separate windows.
 echo Please inspect those windows for any errors.
 echo.
 echo Once started:
-echo Backend: http://localhost:8080
+echo Backend: http://localhost:8081
 echo Frontend: http://localhost:3000
 echo.
 pause
