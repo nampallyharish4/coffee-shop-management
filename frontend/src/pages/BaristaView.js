@@ -11,7 +11,9 @@ const BaristaView = () => {
   useEffect(() => {
     loadOrders();
     const interval = setInterval(loadOrders, 10000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   const loadOrders = async () => {
@@ -23,8 +25,26 @@ const BaristaView = () => {
       setOrders(activeOrders);
     } catch (error) {
       console.error('Failed to load orders:', error);
-      // Don't show alert for background refresh errors
     }
+  };
+
+  const getTimeRemaining = (createdAt) => {
+    if (!createdAt) return 0;
+    const created = new Date(createdAt);
+    const now = new Date();
+    const elapsed = (now - created) / 1000;
+    const cancelWindow = 45;
+    const remaining = Math.max(0, cancelWindow - elapsed);
+    return Math.floor(remaining);
+  };
+
+  const shouldShowOrder = (order) => {
+    // If status is CREATED, only show if timer has expired
+    if (order.status === 'CREATED') {
+      return getTimeRemaining(order.createdAt) === 0;
+    }
+    // Always show strict PREPARATION or READY orders
+    return true;
   };
 
   const updateStatus = async (orderId, newStatus) => {
@@ -55,13 +75,15 @@ const BaristaView = () => {
     }
   };
 
+  const displayedOrders = orders.filter(shouldShowOrder);
+
   return (
     <Layout title="Barista View - Kitchen Orders">
       <Typography variant="h5" gutterBottom>
         Active Orders
       </Typography>
       <Grid container spacing={3}>
-        {orders.map(order => (
+        {displayedOrders.map(order => (
           <Grid item xs={12} sm={6} md={4} key={order.id}>
             <Card>
               <CardContent>
@@ -98,7 +120,7 @@ const BaristaView = () => {
             </Card>
           </Grid>
         ))}
-        {orders.length === 0 && (
+        {displayedOrders.length === 0 && (
           <Grid item xs={12}>
             <Typography variant="body1" align="center" color="textSecondary">
               No active orders

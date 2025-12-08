@@ -18,9 +18,7 @@ const POS = () => {
   const [discount, setDiscount] = useState(0);
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+
 
   const loadData = async () => {
     try {
@@ -35,6 +33,10 @@ const POS = () => {
       setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to load data' });
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   useEffect(() => {
     let result = menuItems;
@@ -197,7 +199,7 @@ const POS = () => {
             placeholder="Search menu items..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{ mb: 2 }}
+            sx={{ mb: 4 }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -230,7 +232,7 @@ const POS = () => {
               },
             }}
           >
-            <Grid container spacing={2}>
+            <Grid container spacing={3} sx={{ p: 1 }}>
             {filteredMenuItems.map(item => (
               <Grid item xs={12} sm={6} md={4} key={item.id}>
                 <Card 
@@ -245,8 +247,8 @@ const POS = () => {
                     border: '1px solid',
                     borderColor: 'divider',
                     '&:hover': {
-                      transform: 'translateY(-8px)',
-                      boxShadow: 6,
+                      transform: 'translateY(-4px)',
+                      boxShadow: 4,
                       borderColor: 'primary.main'
                     }
                   }}
@@ -344,24 +346,63 @@ const POS = () => {
                       ₹{Number(item.price).toFixed(2)}
                     </Typography>
                     
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addToCart(item);
-                      }}
-                      sx={{ 
-                        py: 0.75,
-                        fontSize: '0.75rem',
-                        textTransform: 'none',
-                        fontWeight: 'bold',
-                        borderRadius: 1
-                      }}
-                    >
-                      Add to Cart
-                    </Button>
+                      {cart.find(c => c.menuItemId === item.id) ? (
+                        <Box 
+                          sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'space-between',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 1,
+                            p: 0.5
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <IconButton 
+                            size="small" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateQuantity(item.id, -1);
+                            }}
+                            sx={{ p: 0.5 }}
+                          >
+                            <Remove fontSize="small" />
+                          </IconButton>
+                          <Typography fontWeight="bold">
+                            {cart.find(c => c.menuItemId === item.id).quantity}
+                          </Typography>
+                          <IconButton 
+                            size="small" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateQuantity(item.id, 1);
+                            }}
+                            sx={{ p: 0.5 }}
+                          >
+                            <Add fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      ) : (
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart(item);
+                          }}
+                          sx={{ 
+                            py: 0.75,
+                            fontSize: '0.75rem',
+                            textTransform: 'none',
+                            fontWeight: 'bold',
+                            borderRadius: 1
+                          }}
+                        >
+                          Add to Cart
+                        </Button>
+                      )}
                   </CardContent>
                 </Card>
               </Grid>
@@ -491,23 +532,6 @@ const POS = () => {
                       </Box>
                       
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <IconButton 
-                          size="small" 
-                          onClick={() => updateQuantity(item.menuItemId, -1)}
-                          sx={{ 
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            width: 32,
-                            height: 32,
-                            '&:hover': { 
-                              backgroundColor: 'action.hover',
-                              borderColor: 'primary.main'
-                            }
-                          }}
-                        >
-                          <Remove fontSize="small" />
-                        </IconButton>
-                        
                         <Typography 
                           variant="body1" 
                           fontWeight="bold" 
@@ -517,25 +541,8 @@ const POS = () => {
                             fontSize: '0.95rem'
                           }}
                         >
-                          {item.quantity}
+                          x{item.quantity}
                         </Typography>
-                        
-                        <IconButton 
-                          size="small" 
-                          onClick={() => updateQuantity(item.menuItemId, 1)}
-                          sx={{ 
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            width: 32,
-                            height: 32,
-                            '&:hover': { 
-                              backgroundColor: 'action.hover',
-                              borderColor: 'primary.main'
-                            }
-                          }}
-                        >
-                          <Add fontSize="small" />
-                        </IconButton>
                       </Box>
                       
                       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', ml: 1, minWidth: '90px' }}>

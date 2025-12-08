@@ -5,7 +5,7 @@ import {
   Typography, Tabs, Tab, IconButton, Collapse, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, Snackbar, Alert
 } from '@mui/material';
-import { KeyboardArrowDown, KeyboardArrowUp, Receipt, Print, Cancel, CalendarToday } from '@mui/icons-material';
+import { KeyboardArrowDown, KeyboardArrowUp, Receipt, Print, Cancel } from '@mui/icons-material';
 import Layout from '../components/Layout';
 import { orderService } from '../services/api';
 
@@ -38,40 +38,6 @@ const Orders = () => {
   // Default to today (Local Time)
   const [selectedDate, setSelectedDate] = useState(getLocalDateString());
 
-  useEffect(() => {
-    loadOrders();
-    const interval = setInterval(loadOrders, 10000); // Refresh every 10 seconds
-    return () => clearInterval(interval);
-  }, []);
-
-  // Enforce restricted view
-  useEffect(() => {
-    if (isRestrictedView && (tab === 0 || tab === 3)) {
-      setTab(1);
-    }
-  }, [isRestrictedView, tab]);
-
-  useEffect(() => {
-    filterOrders();
-  }, [tab, orders, selectedDate]);
-
-  // Countdown timer effect - updates every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const newCountdowns = {};
-      orders.forEach(order => {
-        if (canCancelOrder(order)) {
-          const timeRemaining = getTimeRemaining(order.createdAt);
-          if (timeRemaining > 0) {
-            newCountdowns[order.id] = timeRemaining;
-          }
-        }
-      });
-      setCountdowns(newCountdowns);
-    }, 1000); // Update every second
-
-    return () => clearInterval(timer);
-  }, [orders]);
 
   const loadOrders = async () => {
     try {
@@ -88,7 +54,7 @@ const Orders = () => {
     }
   };
 
-  const filterOrders = () => {
+  const filterOrders = React.useCallback(() => {
     let filtered = [];
     switch (tab) {
       case 0: // All Orders
@@ -118,7 +84,7 @@ const Orders = () => {
     }
     
     setFilteredOrders(filtered);
-  };
+  }, [tab, orders, selectedDate]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -156,25 +122,60 @@ const Orders = () => {
     window.print();
   };
 
-  const canCancelOrder = (order) => {
-    // Can cancel if order is CREATED or IN_PREPARATION and within 2 minutes
+  const getTimeRemaining = React.useCallback((createdAt) => {
+    if (!createdAt) return 0;
+    const created = new Date(createdAt);
+    const now = new Date();
+    const elapsed = (now - created) / 1000; // elapsed time in seconds
+    const cancelWindow = 45; // 45 seconds
+    const remaining = Math.max(0, cancelWindow - elapsed);
+    return Math.floor(remaining);
+  }, []);
+
+  const canCancelOrder = React.useCallback((order) => {
+    // Can cancel if order is CREATED or IN_PREPARATION and within 45 seconds
     const cancellableStatuses = ['CREATED', 'IN_PREPARATION'];
     if (!cancellableStatuses.includes(order.status)) {
       return false;
     }
     const timeRemaining = getTimeRemaining(order.createdAt);
     return timeRemaining > 0;
-  };
+  }, [getTimeRemaining]);
 
-  const getTimeRemaining = (createdAt) => {
-    if (!createdAt) return 0;
-    const created = new Date(createdAt);
-    const now = new Date();
-    const elapsed = (now - created) / 1000; // elapsed time in seconds
-    const twoMinutes = 120; // 2 minutes in seconds
-    const remaining = Math.max(0, twoMinutes - elapsed);
-    return Math.floor(remaining);
-  };
+  useEffect(() => {
+    loadOrders();
+    const interval = setInterval(loadOrders, 10000); // Refresh every 10 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  // Enforce restricted view
+  useEffect(() => {
+    if (isRestrictedView && (tab === 0 || tab === 3)) {
+      setTab(1);
+    }
+  }, [isRestrictedView, tab]);
+
+  useEffect(() => {
+    filterOrders();
+  }, [filterOrders]);
+
+  // Countdown timer effect - updates every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const newCountdowns = {};
+      orders.forEach(order => {
+        if (canCancelOrder(order)) {
+          const timeRemaining = getTimeRemaining(order.createdAt);
+          if (timeRemaining > 0) {
+            newCountdowns[order.id] = timeRemaining;
+          }
+        }
+      });
+      setCountdowns(newCountdowns);
+    }, 1000); // Update every second
+
+    return () => clearInterval(timer);
+  }, [orders, canCancelOrder, getTimeRemaining]);
 
   const formatCountdown = (seconds) => {
     if (seconds <= 0) return '0:00';

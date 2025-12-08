@@ -36,6 +36,9 @@ public class InventoryItem {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal reorderLevel;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal unitPrice = BigDecimal.ZERO;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

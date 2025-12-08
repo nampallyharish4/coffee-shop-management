@@ -212,6 +212,11 @@ public class OrderService {
                     usage.setOrder(order);
                     usage.setInventoryItem(inventoryItem);
                     usage.setQuantityUsed(totalRequired);
+                    
+                    // Calculate cost based on unit price (default 0 if null)
+                    BigDecimal unitPrice = inventoryItem.getUnitPrice() != null ? inventoryItem.getUnitPrice() : BigDecimal.ZERO;
+                    usage.setTotalCost(totalRequired.multiply(unitPrice));
+                    
                     inventoryUsageRepository.save(usage);
                 }
             }

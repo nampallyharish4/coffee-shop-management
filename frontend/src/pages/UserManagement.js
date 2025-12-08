@@ -17,14 +17,16 @@ const UserManagement = () => {
     name: '', email: '', password: '', roles: [], active: true
   });
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+
 
   const loadUsers = async () => {
     const response = await userService.getAll();
     setUsers(response.data.data);
   };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
   const handleSave = async () => {
     try {

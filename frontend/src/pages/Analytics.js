@@ -17,9 +17,7 @@ const Analytics = () => {
   const [confirmText, setConfirmText] = useState('');
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
 
-  useEffect(() => {
-    loadAnalytics();
-  }, [range]);
+
 
   const loadAnalytics = async () => {
     try {
@@ -39,6 +37,10 @@ const Analytics = () => {
       setStaffPerformance([]);
     }
   };
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [range]);
 
   const handleResetRevenue = async () => {
     if (confirmText !== 'RESET REVENUE') {

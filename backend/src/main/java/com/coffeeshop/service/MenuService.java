@@ -80,17 +80,47 @@ public class MenuService {
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         menuItem.setCategory(category);
 
+        // If it's a new menu item, save it first to get an ID before adding ingredients
+        if (menuItem.getId() == null) {
+            menuItem = menuItemRepository.save(menuItem);
+        }
+
         if (dto.getIngredients() != null) {
             menuItem.getIngredients().clear();
             for (MenuItemDTO.IngredientDTO ingredientDTO : dto.getIngredients()) {
-                InventoryItem inventoryItem = inventoryItemRepository.findById(ingredientDTO.getInventoryItemId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Inventory item not found"));
-                
-                MenuIngredient ingredient = new MenuIngredient();
-                ingredient.setMenuItem(menuItem);
-                ingredient.setInventoryItem(inventoryItem);
-                ingredient.setQuantityRequired(ingredientDTO.getQuantityRequired());
-                menuItem.getIngredients().add(ingredient);
+                InventoryItem inventoryItem = null;
+
+                // 1. Try by ID if present
+                if (ingredientDTO.getInventoryItemId() != null) {
+                   inventoryItem = inventoryItemRepository.findById(ingredientDTO.getInventoryItemId())
+                           .orElse(null);
+                }
+
+                // 2. If not found by ID, try by Name
+                if (inventoryItem == null && ingredientDTO.getInventoryItemName() != null) {
+                    inventoryItem = inventoryItemRepository.findByName(ingredientDTO.getInventoryItemName())
+                            .orElse(null);
+                }
+
+                // 3. If still null, create new Inventory Item
+                if (inventoryItem == null && ingredientDTO.getInventoryItemName() != null) {
+                    InventoryItem newItem = new InventoryItem();
+                    newItem.setName(ingredientDTO.getInventoryItemName());
+                    // Set unit from DTO or default
+                    newItem.setUnit(ingredientDTO.getUnit() != null ? ingredientDTO.getUnit() : "unit");
+                    newItem.setCurrentStock(java.math.BigDecimal.ZERO);
+                    newItem.setReorderLevel(java.math.BigDecimal.TEN);
+                    newItem.setUnitPrice(java.math.BigDecimal.ZERO);
+                    inventoryItem = inventoryItemRepository.save(newItem);
+                }
+
+                if (inventoryItem != null) {
+                    MenuIngredient ingredient = new MenuIngredient();
+                    ingredient.setMenuItem(menuItem);
+                    ingredient.setInventoryItem(inventoryItem);
+                    ingredient.setQuantityRequired(ingredientDTO.getQuantityRequired());
+                    menuItem.getIngredients().add(ingredient);
+                }
             }
         }
     }
@@ -113,6 +143,7 @@ public class MenuService {
                         ingDTO.setInventoryItemId(ing.getInventoryItem().getId());
                         ingDTO.setInventoryItemName(ing.getInventoryItem().getName());
                         ingDTO.setQuantityRequired(ing.getQuantityRequired());
+                        ingDTO.setUnit(ing.getInventoryItem().getUnit());
                         return ingDTO;
                     })
                     .collect(Collectors.toList());

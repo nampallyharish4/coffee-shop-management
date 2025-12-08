@@ -29,24 +29,6 @@ A full-stack web application designed to streamline coffee shop operations. This
     *   Top-selling items and low-stock alerts.
 
 ## 🛠️ Technology Stack
-
-### Backend
-*   **Java 17+**
-*   **Spring Boot 3.x** (Web, Security, Data JPA)
-*   **MySQL** (Database)
-*   **JWT** (JSON Web Tokens) for secure authentication
-*   **Maven** (Build Tool)
-
-### Frontend
-*   **React.js**
-*   **Material-UI (MUI)** for responsive and modern design
-*   **Chart.js / Recharts** for analytics
-*   **Axios** for API integration
-
-## ⚙️ Prerequisites
-
-Ensure you have the following installed on your machine:
-*   [Java Development Kit (JDK) 17+](https://www.oracle.com/java/technologies/downloads/)
 *   [Node.js & npm](https://nodejs.org/)
 *   [MySQL Server](https://dev.mysql.com/downloads/mysql/)
 *   [Maven](https://maven.apache.org/) (Optional, wrapper included)

@@ -34,5 +34,6 @@ public class MenuItemDTO {
         private Long inventoryItemId;
         private String inventoryItemName;
         private BigDecimal quantityRequired;
+        private String unit;
     }
 }

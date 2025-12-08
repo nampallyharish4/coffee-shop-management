@@ -10,6 +10,6 @@ echo Building and starting backend...
 echo This may take a minute...
 echo.
 
-mvn spring-boot:run
+call mvn spring-boot:run
 
 pause

@@ -34,6 +34,9 @@ public class InventoryUsage {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal quantityUsed;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal totalCost = BigDecimal.ZERO;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime usedAt;

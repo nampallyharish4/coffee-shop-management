@@ -72,6 +72,7 @@ export const inventoryService = {
   update: (id, item) => api.put(`/inventory/${id}`, item),
   addStock: (id, quantity) => api.post(`/inventory/${id}/add-stock`, { currentStock: quantity }),
   delete: (id) => api.delete(`/inventory/${id}`),
+  getUsageHistory: () => api.get('/inventory/usage-history'),
 };
 
 export const categoryService = {

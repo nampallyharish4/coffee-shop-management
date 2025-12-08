@@ -88,4 +88,11 @@ public class InventoryController {
         inventoryService.deleteInventoryItem(id);
         return ResponseEntity.ok(new ApiResponse(true, "Inventory item deleted successfully"));
     }
+
+    @GetMapping("/usage-history")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
+    @Operation(summary = "Get inventory usage history")
+    public ResponseEntity<ApiResponse> getUsageHistory() {
+        return ResponseEntity.ok(new ApiResponse(true, "Inventory usage history retrieved successfully", inventoryService.getInventoryUsageHistory()));
+    }
 }

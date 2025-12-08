@@ -3,6 +3,7 @@ import {
   Button, Table, TableBody, TableCell, TableHead, TableRow, Paper,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Tabs, Tab, Box
 } from '@mui/material';
+import { Print } from '@mui/icons-material';
 import Layout from '../components/Layout';
 import { inventoryService } from '../services/api';
 
@@ -19,26 +20,147 @@ const InventoryManagement = () => {
     name: '', unit: '', currentStock: '', reorderLevel: ''
   });
 
+  const [usageHistory, setUsageHistory] = useState([]);
+
+
+
+  const loadData = async () => {
+    try {
+      const response = await inventoryService.getAll();
+      setItems(response.data.data);
+    } catch (error) {
+      console.error("Failed to load inventory:", error);
+    }
+  };
+
+  const loadUsageHistory = async () => {
+     try {
+       const response = await inventoryService.getUsageHistory();
+       const rawHistory = response.data.data;
+
+       // Aggregate history by Order ID and Inventory Item Name
+       const aggregatedHistory = Object.values(rawHistory.reduce((acc, log) => {
+         const key = `${log.orderId}-${log.inventoryItemName}`;
+         if (!acc[key]) {
+           acc[key] = { ...log, quantityUsed: 0, totalCost: 0 };
+         }
+         acc[key].quantityUsed += Number(log.quantityUsed);
+         acc[key].totalCost += Number(log.totalCost || 0);
+         // Keep the latest date if they differ, though they should be same for one order
+         return acc;
+       }, {}));
+
+       // Sort by date descending
+       aggregatedHistory.sort((a, b) => new Date(b.usedAt) - new Date(a.usedAt));
+
+       setUsageHistory(aggregatedHistory);
+     } catch (error) {
+       console.error("Failed to load usage history:", error);
+     }
+  };
+
+  const filterItems = React.useCallback(() => {
+    setFilteredItems(items);
+  }, [items]);
+
   useEffect(() => {
     loadData();
   }, []);
 
   useEffect(() => {
     filterItems();
-  }, [tab, items]);
+  }, [tab, items, filterItems]);
 
-  const loadData = async () => {
-    const response = await inventoryService.getAll();
-    setItems(response.data.data);
-  };
-
-  const filterItems = () => {
+  useEffect(() => {
     if (tab === 1) {
-      setFilteredItems(items.filter(i => i.lowStock));
-    } else if (tab === 2) {
-      setFilteredItems(items.filter(i => i.outOfStock));
+      loadUsageHistory();
+    }
+  }, [tab]);
+
+  const handlePrintRestockReport = () => {
+    const lowStockItems = items.filter(item => item.lowStock || item.outOfStock);
+    
+    if (lowStockItems.length === 0) {
+      alert('No items currently in low stock or out of stock.');
+      return;
+    }
+
+    const reportContent = `
+      <html>
+        <head>
+          <title>Restock Report - Coffee Shop</title>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #333; }
+            .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
+            h1 { margin: 0; color: #2c3e50; }
+            .meta { text-align: right; color: #666; font-size: 0.9rem; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background-color: #f8f9fa; font-weight: 600; color: #2c3e50; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            .status-out { color: #d32f2f; font-weight: bold; background-color: #ffebee; padding: 4px 8px; border-radius: 4px; display: inline-block; }
+            .status-low { color: #ed6c02; font-weight: bold; background-color: #fff3e0; padding: 4px 8px; border-radius: 4px; display: inline-block; }
+            .footer { margin-top: 40px; text-align: center; color: #888; font-size: 0.8rem; border-top: 1px solid #eee; padding-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <h1>Restock Requirement Report</h1>
+              <p style="margin: 5px 0 0 0; color: #666;">Items requiring immediate attention</p>
+            </div>
+            <div class="meta">
+              <p>Generated: ${new Date().toLocaleString()}</p>
+              <p>Total Items: ${lowStockItems.length}</p>
+            </div>
+          </div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>Item Name</th>
+                <th>Status</th>
+                <th>Current Stock</th>
+                <th>Reorder Level</th>
+                <th>Recommended Add (to 2x Level)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${lowStockItems.map(item => {
+                const status = item.outOfStock ? 'Out of Stock' : 'Low Stock';
+                const statusClass = item.outOfStock ? 'status-out' : 'status-low';
+                // Suggest topping up to 2x Reorder Level for safety buffer
+                const recommendedAdd = Math.ceil((item.reorderLevel * 2) - item.currentStock);
+                return `
+                  <tr>
+                    <td><strong>${item.name}</strong></td>
+                    <td><span class="${statusClass}">${status}</span></td>
+                    <td>${item.currentStock} ${item.unit}</td>
+                    <td>${item.reorderLevel} ${item.unit}</td>
+                    <td><strong>${recommendedAdd > 0 ? recommendedAdd : 0} ${item.unit}</strong></td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            Coffee Shop Management System | Internal Use Only
+          </div>
+
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '', 'height=600,width=800');
+    if (printWindow) {
+      printWindow.document.write(reportContent);
+      printWindow.document.close();
     } else {
-      setFilteredItems(items);
+      alert('Please allow popups to view the report');
     }
   };
 
@@ -97,23 +219,77 @@ const InventoryManagement = () => {
     setOpen(true);
   };
 
-  const openAddStock = (item) => {
+  const openAddStock = (item = null) => {
     setStockItem(item);
     setAddStockOpen(true);
   };
 
+  const formatUsage = (qty, unit) => {
+    const val = Number(qty);
+    if (!unit) return `-${val.toFixed(2)}`;
+    
+    const u = unit.toLowerCase();
+    if (u === 'liters') return `-${(val * 1000).toFixed(0)} ml`;
+    if (u === 'kg') return `-${(val * 1000).toFixed(0)} grams`;
+    if (u === 'pieces') return `-${val.toFixed(0)} ps`;
+    
+    return `-${val.toFixed(2)} ${unit}`;
+  };
+
   return (
     <Layout title="Inventory Management">
-      <Button variant="contained" onClick={() => openDialog()} sx={{ mb: 2 }}>
-        Add Inventory Item
-      </Button>
+      <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
+        <Button variant="contained" onClick={() => openDialog()}>
+          Add Inventory Item
+        </Button>
+        <Button 
+          variant="outlined" 
+          startIcon={<Print />}
+          onClick={handlePrintRestockReport}
+          color="secondary"
+        >
+          Print Restock Report
+        </Button>
+      </Box>
 
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label="All Items" />
-        <Tab label="Low Stock" />
-        <Tab label="Out of Stock" />
+        <Tab label="Usage History" />
       </Tabs>
 
+      {tab === 1 ? (
+        <Paper>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Date & Time</TableCell>
+                <TableCell>Item Name</TableCell>
+                <TableCell>Source</TableCell>
+                <TableCell>Quantity Deducted</TableCell>
+
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {usageHistory.map(log => (
+                <TableRow key={log.id}>
+                  <TableCell>{new Date(log.usedAt).toLocaleString()}</TableCell>
+                  <TableCell>{log.inventoryItemName}</TableCell>
+                  <TableCell>Order #{log.orderId}</TableCell>
+                  <TableCell sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                    {formatUsage(log.quantityUsed, items.find(i => i.name === log.inventoryItemName)?.unit)}
+                  </TableCell>
+
+                </TableRow>
+              ))}
+              {usageHistory.length === 0 && (
+                 <TableRow>
+                   <TableCell colSpan={4} align="center">No usage history found</TableCell>
+                 </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </Paper>
+      ) : (
       <Paper>
         <Table>
           <TableHead>
@@ -147,6 +323,7 @@ const InventoryManagement = () => {
           </TableBody>
         </Table>
       </Paper>
+      )}
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editItem ? 'Edit' : 'Add'} Inventory Item</DialogTitle>

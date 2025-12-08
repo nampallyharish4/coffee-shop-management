@@ -80,6 +80,23 @@ public class InventoryService {
         item.setReorderLevel(dto.getReorderLevel());
     }
 
+    @Autowired
+    private com.coffeeshop.repository.InventoryUsageRepository inventoryUsageRepository;
+
+    public List<com.coffeeshop.dto.InventoryUsageDTO> getInventoryUsageHistory() {
+        return inventoryUsageRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "usedAt")).stream()
+                .map(usage -> new com.coffeeshop.dto.InventoryUsageDTO(
+                        usage.getId(),
+                        usage.getInventoryItem().getId(),
+                        usage.getInventoryItem().getName(),
+                        usage.getOrder().getId(),
+                        usage.getQuantityUsed(),
+                        usage.getTotalCost(),
+                        usage.getUsedAt()
+                ))
+                .collect(Collectors.toList());
+    }
+
     private InventoryItemDTO convertToDTO(InventoryItem item) {
         InventoryItemDTO dto = new InventoryItemDTO();
         dto.setId(item.getId());
