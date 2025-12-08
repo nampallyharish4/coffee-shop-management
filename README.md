@@ -43,17 +43,24 @@ A full-stack web application designed to streamline coffee shop operations. This
     ```
     *This creates the `coffee_shop` database and a user `coffee_admin` with password `Coffee@123`.*
 
-### 2. Backend Setup
+### 2. Running the Application (Quick Start)
+The easiest way to run the application is to use the all-in-one launcher script:
+```bash
+start_app.bat
+```
+This script will launch both the backend and frontend in separate windows.
+
+### 3. Manual Startup
+**Backend:**
 1.  Navigate to the project root directory.
-2.  Update database credentials in `backend/src/main/resources/application.properties` if you changed them from the defaults.
-3.  Run the start script:
+2.  Run the start script (or use `mvn spring-boot:run` inside `backend` folder):
     ```bash
     start-backend.bat
     ```
-    *This will compile the Java code and start the server on port `8080`.*
+    *This will compile and start the server on port `8081`.*
 
-### 3. Frontend Setup
-1.  Run the start script:
+**Frontend:**
+1.  Run the start script (or use `npm start` inside `frontend` folder):
     ```bash
     start-frontend.bat
     ```
@@ -98,7 +105,7 @@ COFFEE-SHOP/
 ## 📖 API Documentation
 
 Once the backend is running, you can explore the REST API via Swagger UI:
-*   URL: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+*   URL: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
 
 ## 🛡️ License
 
