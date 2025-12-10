@@ -10,7 +10,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
-const Layout = ({ children, title }) => {
+const Layout = ({ children, title, headerContent }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
@@ -83,12 +83,13 @@ const Layout = ({ children, title }) => {
         </Box>
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, mt: 8 }}>
         {!isDashboard && (
-          <Box sx={{ mb: 2 }}>
+          <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
             <IconButton 
               onClick={() => navigate('/dashboard')}
               sx={{ 
+                mr: 2,
                 border: '1px solid',
                 borderColor: 'divider',
                 borderRadius: 1,
@@ -97,6 +98,11 @@ const Layout = ({ children, title }) => {
             >
               <ArrowBack />
             </IconButton>
+            {headerContent && (
+              <Box sx={{ flexGrow: 1 }}>
+                {headerContent}
+              </Box>
+            )}
           </Box>
         )}
         <Container maxWidth="xl">

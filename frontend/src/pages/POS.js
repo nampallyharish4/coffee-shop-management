@@ -76,7 +76,7 @@ const POS = () => {
     setCart(cart.map(item => {
       if (item.menuItemId === menuItemId) {
         const newQty = item.quantity + delta;
-        return newQty > 0 ? { ...item, quantity: newQty } : item;
+        return { ...item, quantity: newQty };
       }
       return item;
     }).filter(item => item.quantity > 0));
@@ -142,7 +142,22 @@ const POS = () => {
   const totals = calculateTotal();
 
   return (
-    <Layout title="Point of Sale">
+    <Layout 
+      title="Point of Sale" 
+      headerContent={
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h5" fontWeight="bold" color="primary">
+            Menu Items
+          </Typography>
+          <Chip 
+            icon={<ShoppingCart />} 
+            label={`${cart.length} items`} 
+            color="primary" 
+            variant="outlined"
+          />
+        </Box>
+      }
+    >
       <Snackbar
         open={!!message.text}
         autoHideDuration={6000}
@@ -161,18 +176,7 @@ const POS = () => {
 
       <Grid container spacing={3}>
         {/* Menu Items Section */}
-        <Grid item xs={12} md={7}>
-          <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="h5" fontWeight="bold" color="primary">
-              Menu Items
-            </Typography>
-            <Chip 
-              icon={<ShoppingCart />} 
-              label={`${cart.length} items`} 
-              color="primary" 
-              variant="outlined"
-            />
-          </Box>
+        <Grid item xs={12} md={8}>
 
           <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 1 }}>
             <Chip 
@@ -232,33 +236,36 @@ const POS = () => {
               },
             }}
           >
-            <Grid container spacing={3} sx={{ p: 1 }}>
+            <Grid container spacing={2} sx={{ p: 1 }}>
             {filteredMenuItems.map(item => (
-              <Grid item xs={12} sm={6} md={4} key={item.id}>
+              <Grid item xs={6} sm={6} md={6} lg={4} key={item.id}>
                 <Card 
                   sx={{ 
-                    aspectRatio: '1 / 1',
+                    height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    borderRadius: 2,
+                    borderRadius: 3,
                     overflow: 'hidden',
-                    transition: 'all 0.3s ease',
-                    cursor: 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    cursor: 'default',
                     border: '1px solid',
                     borderColor: 'divider',
+                    boxShadow: 2,
                     '&:hover': {
                       transform: 'translateY(-4px)',
-                      boxShadow: 4,
-                      borderColor: 'primary.main'
+                      boxShadow: 8,
+                      borderColor: 'primary.main',
+                      '& .item-image': {
+                        transform: 'scale(1.1)'
+                      }
                     }
                   }}
-                  onClick={() => addToCart(item)}
                 >
                   {/* Square Image Container */}
                   <Box
                     sx={{
                       width: '100%',
-                      aspectRatio: '1 / 1',
+                      height: 200,
                       overflow: 'hidden',
                       backgroundColor: '#f5f5f5',
                       position: 'relative',
@@ -269,6 +276,7 @@ const POS = () => {
                   >
                     {item.imageUrl ? (
                       <img
+                        className="item-image"
                         src={item.imageUrl}
                         alt={item.name}
                         style={{
@@ -277,8 +285,7 @@ const POS = () => {
                           objectFit: 'cover',
                           objectPosition: 'center',
                           display: 'block',
-                          minWidth: '100%',
-                          minHeight: '100%'
+                          transition: 'transform 0.5s ease'
                         }}
                         onError={(e) => {
                           e.target.src = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400';
@@ -351,11 +358,15 @@ const POS = () => {
                           sx={{ 
                             display: 'flex', 
                             alignItems: 'center', 
-                            justifyContent: 'space-between',
+                            justifyContent: 'center',
+                            gap: 1,
                             border: '1px solid',
                             borderColor: 'divider',
                             borderRadius: 1,
-                            p: 0.5
+                            p: 0.5,
+                            px: 2,
+                            width: 'fit-content',
+                            ml: 'auto'
                           }}
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -412,7 +423,7 @@ const POS = () => {
         </Grid>
 
         {/* Cart Section */}
-        <Grid item xs={12} md={5}>
+        <Grid item xs={12} md={4}>
           <Paper 
             sx={{ 
               p: 3,
@@ -420,9 +431,10 @@ const POS = () => {
               boxShadow: 3,
               display: 'flex',
               flexDirection: 'column',
-              position: 'sticky',
-              top: 100,
-              height: 'calc(100vh - 120px)',
+              position: { xs: 'relative', md: 'sticky' },
+              top: { md: 100 },
+              height: { xs: 'auto', md: 'calc(100vh - 120px)' },
+              maxHeight: { xs: '80vh', md: 'calc(100vh - 120px)' }
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>

@@ -24,6 +24,7 @@ const MenuManagement = () => {
   // State for new ingredient input in dialog
   const [newIngredient, setNewIngredient] = useState({ inventoryItem: null, quantity: '' });
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ open: false, id: null });
 
 
 
@@ -92,24 +93,31 @@ const MenuManagement = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this menu item?')) {
-      try {
-        await menuService.delete(id);
-        setSnackbar({
-          open: true,
-          message: 'Menu item deleted successfully!',
-          severity: 'success'
-        });
-        loadData();
-      } catch (error) {
-        console.error('Failed to delete menu item:', error);
-        setSnackbar({
-          open: true,
-          message: error.response?.data?.message || 'Failed to delete menu item. Please try again.',
-          severity: 'error'
-        });
-      }
+  const handleDeleteClick = (id) => {
+    setDeleteConfirmation({ open: true, id });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { id } = deleteConfirmation;
+    if (!id) return;
+
+    try {
+      await menuService.delete(id);
+      setSnackbar({
+        open: true,
+        message: 'Menu item deleted successfully!',
+        severity: 'success'
+      });
+      loadData();
+    } catch (error) {
+      console.error('Failed to delete menu item:', error);
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.message || 'Failed to delete menu item. Please try again.',
+        severity: 'error'
+      });
+    } finally {
+      setDeleteConfirmation({ open: false, id: null });
     }
   };
 
@@ -304,7 +312,7 @@ const MenuManagement = () => {
                 {hasRole('ROLE_ADMIN') && (
                   <TableCell>
                     <Button onClick={() => openDialog(item)}>Edit</Button>
-                    <Button onClick={() => handleDelete(item.id)} color="error">Delete</Button>
+                    <Button onClick={() => handleDeleteClick(item.id)} color="error">Delete</Button>
                   </TableCell>
                 )}
               </TableRow>
@@ -312,6 +320,26 @@ const MenuManagement = () => {
           </TableBody>
         </Table>
       </Paper>
+
+      <Dialog
+        open={deleteConfirmation.open}
+        onClose={() => setDeleteConfirmation({ open: false, id: null })}
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this menu item?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmation({ open: false, id: null })}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Only show dialog to admins */}
       {hasRole('ROLE_ADMIN') && (
