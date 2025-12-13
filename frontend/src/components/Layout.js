@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ThemeSwitcher from './ThemeSwitcher';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar, Toolbar, Typography, IconButton, Drawer, List, ListItem,
@@ -49,6 +50,8 @@ const Layout = ({ children, title, headerContent }) => {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             {title || 'Coffee Shop Management'}
           </Typography>
+
+          <ThemeSwitcher />
           <Typography variant="body1" sx={{ mr: 2 }}>
             {user?.name}
           </Typography>

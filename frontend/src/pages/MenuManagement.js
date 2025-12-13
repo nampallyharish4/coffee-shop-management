@@ -213,7 +213,7 @@ const MenuManagement = () => {
     <Layout title="Menu Management">
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={6000}
+        autoHideDuration={1000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >

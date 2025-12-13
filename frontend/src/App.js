@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import Loader from './components/Loader';
+import { ThemeProviderWrapper } from './context/ThemeContext';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -14,16 +15,7 @@ import InventoryManagement from './pages/InventoryManagement';
 import UserManagement from './pages/UserManagement';
 import Analytics from './pages/Analytics';
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#6F4E37',
-    },
-    secondary: {
-      main: '#D2691E',
-    },
-  },
-});
+
 
 const PrivateRoute = ({ children, roles }) => {
   const { user, loading } = useAuth();
@@ -63,15 +55,52 @@ function AppRoutes() {
 }
 
 function App() {
+  const [isBackendReady, setIsBackendReady] = React.useState(false);
+
+  React.useEffect(() => {
+    const startTime = Date.now();
+    const MIN_LOAD_TIME = 7000; // 7 seconds
+
+    const checkBackend = async () => {
+      try {
+        // Try to fetch the Swagger UI page or a simple health endpoint
+        // Using fetch to avoid axios interceptors that might redirect to login
+        await fetch('http://localhost:8081/api-docs', {
+          method: 'HEAD', 
+          mode: 'no-cors' // We just want to know if it's reachable
+        });
+        
+        // Backend is ready. Check if we need to wait longer to meet the minimum load time.
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = MIN_LOAD_TIME - elapsedTime;
+
+        if (remainingTime > 0) {
+            setTimeout(() => setIsBackendReady(true), remainingTime);
+        } else {
+            setIsBackendReady(true);
+        }
+
+      } catch (error) {
+        // Retry after 2 seconds
+        setTimeout(checkBackend, 2000);
+      }
+    };
+
+    checkBackend();
+  }, []);
+
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProviderWrapper>
       <CssBaseline />
-      <AuthProvider>
-        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <AppRoutes />
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
+      {!isBackendReady && <Loader />}
+      {isBackendReady && (
+        <AuthProvider>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <AppRoutes />
+          </Router>
+        </AuthProvider>
+      )}
+    </ThemeProviderWrapper>
   );
 }
 
