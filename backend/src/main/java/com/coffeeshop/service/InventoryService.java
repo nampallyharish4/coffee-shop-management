@@ -97,6 +97,11 @@ public class InventoryService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public void resetUsageHistory() {
+        inventoryUsageRepository.deleteAllUsage();
+    }
+
     private InventoryItemDTO convertToDTO(InventoryItem item) {
         InventoryItemDTO dto = new InventoryItemDTO();
         dto.setId(item.getId());

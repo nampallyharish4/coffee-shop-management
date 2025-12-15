@@ -17,4 +17,7 @@ public interface InventoryUsageRepository extends JpaRepository<InventoryUsage, 
            "GROUP BY iu.inventoryItem.id, iu.inventoryItem.name")
     List<Object[]> findUsageSummary(@Param("start") LocalDateTime start, 
                                     @Param("end") LocalDateTime end);
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM InventoryUsage")
+    void deleteAllUsage();
 }

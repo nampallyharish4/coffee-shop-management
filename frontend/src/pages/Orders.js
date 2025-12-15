@@ -231,6 +231,22 @@ const Orders = () => {
 
   const displayOrders = filteredOrders.filter(order => !shouldHideOrder(order));
 
+  const getFilteredCount = (statuses) => {
+    return orders.filter(o => {
+      // Status Check
+      if (statuses && !statuses.includes(o.status)) return false;
+      // Date Check
+      if (selectedDate) {
+        const orderDate = getLocalDateString(new Date(o.createdAt));
+        if (orderDate !== selectedDate) return false;
+      }
+      // Hide Check (for restricted views)
+      if (shouldHideOrder(o)) return false;
+      
+      return true;
+    }).length;
+  };
+
   return (
     <Layout title="Orders">
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -258,10 +274,10 @@ const Orders = () => {
       </Box>
 
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 2 }}>
-        {!isRestrictedView && <Tab label={`All Orders (${orders.length})`} value={0} />}
-        <Tab label={`Active (${orders.filter(o => ['CREATED', 'IN_PREPARATION', 'READY'].includes(o.status) && !shouldHideOrder(o)).length})`} value={1} />
-        <Tab label={`Completed (${orders.filter(o => o.status === 'COMPLETED').length})`} value={2} />
-        {!isRestrictedView && <Tab label={`Cancelled (${orders.filter(o => o.status === 'CANCELLED').length})`} value={3} />}
+        {!isRestrictedView && <Tab label={`All Orders (${getFilteredCount(null)})`} value={0} />}
+        <Tab label={`Active (${getFilteredCount(['CREATED', 'IN_PREPARATION', 'READY'])})`} value={1} />
+        <Tab label={`Completed (${getFilteredCount(['COMPLETED'])})`} value={2} />
+        {!isRestrictedView && <Tab label={`Cancelled (${getFilteredCount(['CANCELLED'])})`} value={3} />}
       </Tabs>
 
       <Paper>

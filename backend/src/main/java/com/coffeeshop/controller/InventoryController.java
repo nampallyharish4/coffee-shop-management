@@ -95,4 +95,11 @@ public class InventoryController {
     public ResponseEntity<ApiResponse> getUsageHistory() {
         return ResponseEntity.ok(new ApiResponse(true, "Inventory usage history retrieved successfully", inventoryService.getInventoryUsageHistory()));
     }
+    @DeleteMapping("/usage-history/reset")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    @Operation(summary = "Reset inventory usage history")
+    public ResponseEntity<ApiResponse> resetUsageHistory() {
+        inventoryService.resetUsageHistory();
+        return ResponseEntity.ok(new ApiResponse(true, "Inventory usage history reset successfully"));
+    }
 }

@@ -25,6 +25,7 @@ const MenuManagement = () => {
   const [newIngredient, setNewIngredient] = useState({ inventoryItem: null, quantity: '' });
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [deleteConfirmation, setDeleteConfirmation] = useState({ open: false, id: null });
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
 
 
 
@@ -61,6 +62,17 @@ const MenuManagement = () => {
         categoryId: Number(formData.categoryId),
         price: Number(formData.price)
       };
+
+      // Check for duplicate name (case-insensitive)
+      const isDuplicate = items.some(item => 
+        item.name.toLowerCase() === dataToSend.name.toLowerCase() && 
+        item.id !== (editItem ? editItem.id : null)
+      );
+
+      if (isDuplicate) {
+        setDuplicateDialogOpen(true);
+        return;
+      }
       
       if (editItem) {
         await menuService.update(editItem.id, dataToSend);
@@ -486,6 +498,19 @@ const MenuManagement = () => {
           </DialogActions>
         </Dialog>
       )}
+
+      <Dialog open={duplicateDialogOpen} onClose={() => setDuplicateDialogOpen(false)}>
+        <DialogTitle sx={{ color: 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <span style={{ fontSize: '1.5rem' }}>⚠️</span> Duplicate Item
+        </DialogTitle>
+        <DialogContent>
+          <p>A menu item with the name <strong>"{formData.name}"</strong> already exists.</p>
+          <p>Please use a different name or edit the existing item.</p>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDuplicateDialogOpen(false)} variant="contained" color="primary">OK</Button>
+        </DialogActions>
+      </Dialog>
     </Layout>
   );
 };
