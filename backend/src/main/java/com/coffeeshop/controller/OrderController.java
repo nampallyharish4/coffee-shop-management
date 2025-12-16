@@ -72,10 +72,16 @@ public class OrderController {
 
     @PostMapping("/reset-revenue")
     @Operation(summary = "Reset revenue by canceling all completed orders")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> resetRevenue() {
-        int cancelledCount = orderService.resetRevenue();
-        return ResponseEntity.ok(new ApiResponse(true, 
-            "Revenue reset successfully. " + cancelledCount + " orders cancelled.", 
-            cancelledCount));
+        int count = orderService.resetRevenue();
+        return ResponseEntity.ok(new ApiResponse(true, "Revenue reset successfully", count));
+    }
+
+    @DeleteMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> deleteAllOrders() {
+        orderService.deleteAllOrders();
+        return ResponseEntity.ok(new ApiResponse(true, "All order history deleted successfully", null));
     }
 }

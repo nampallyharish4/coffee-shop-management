@@ -14,6 +14,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     @Query("SELECT oi.menuItem.name, SUM(oi.quantity) as totalQuantity " +
            "FROM OrderItem oi " +
            "WHERE oi.order.createdAt BETWEEN :start AND :end " +
+           "AND oi.order.status = 'COMPLETED' " +
            "GROUP BY oi.menuItem.id, oi.menuItem.name " +
            "ORDER BY totalQuantity DESC")
     List<Object[]> findTopSellingItems(@Param("start") LocalDateTime start, 

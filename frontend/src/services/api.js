@@ -61,6 +61,7 @@ export const orderService = {
   updateStatus: (id, status) => api.put(`/orders/${id}/status`, { status }),
   cancel: (id, reason) => api.put(`/orders/${id}/cancel`, { reason }),
   resetRevenue: () => api.post('/orders/reset-revenue'),
+  deleteAll: () => api.delete('/orders'),
 };
 
 export const inventoryService = {

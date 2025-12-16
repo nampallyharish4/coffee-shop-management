@@ -176,6 +176,14 @@ public class OrderService {
         return cancelledCount;
     }
 
+    @Transactional
+    public void deleteAllOrders() {
+        // First delete foreign key dependencies in inventory_usage
+        inventoryUsageRepository.deleteAll();
+        // Then delete all orders (cascade will handle items and payments)
+        orderRepository.deleteAll();
+    }
+
     private void validateStock(Order order) {
         for (OrderItem orderItem : order.getItems()) {
             MenuItem menuItem = menuItemRepository.findByIdWithIngredients(orderItem.getMenuItem().getId());

@@ -14,6 +14,7 @@ const Analytics = () => {
   const [topItems, setTopItems] = useState([]);
   const [staffPerformance, setStaffPerformance] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
+  const [dialogType, setDialogType] = useState('RESET_REVENUE'); // 'RESET_REVENUE' or 'CLEAR_HISTORY'
   const [confirmText, setConfirmText] = useState('');
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
 
@@ -42,34 +43,40 @@ const Analytics = () => {
     loadAnalytics();
   }, [range]);
 
-  const handleResetRevenue = async () => {
-    if (confirmText !== 'RESET REVENUE') {
+  const handleAction = async () => {
+    const requiredText = dialogType === 'RESET_REVENUE' ? 'RESET REVENUE' : 'DELETE EVERYTHING';
+    if (confirmText !== requiredText) {
       setAlert({
         open: true,
-        message: 'Please type "RESET REVENUE" to confirm',
+        message: `Please type "${requiredText}" to confirm`,
         severity: 'error'
       });
       return;
     }
 
     try {
-      const response = await orderService.resetRevenue();
-      setAlert({
-        open: true,
-        message: `Revenue reset successfully. ${response.data.data} orders cancelled.`,
-        severity: 'success'
-      });
+      if (dialogType === 'RESET_REVENUE') {
+        const response = await orderService.resetRevenue();
+      } else {
+        await orderService.deleteAll();
+      }
+      
       setOpenDialog(false);
       setConfirmText('');
-      // Reload analytics data
       loadAnalytics();
     } catch (error) {
       setAlert({
         open: true,
-        message: error.response?.data?.message || 'Failed to reset revenue',
+        message: error.response?.data?.message || 'Failed to perform action',
         severity: 'error'
       });
     }
+  };
+
+  const openConfirmation = (type) => {
+    setDialogType(type);
+    setConfirmText('');
+    setOpenDialog(true);
   };
 
   const handleCloseAlert = (event, reason) => {
@@ -79,14 +86,15 @@ const Analytics = () => {
 
   return (
     <Layout title="Analytics & Reports">
-      <Alert 
-        severity={alert.severity} 
-        open={alert.open} 
-        onClose={handleCloseAlert}
-        sx={{ mb: 2 }}
-      >
-        {alert.message}
-      </Alert>
+      {alert.open && (
+        <Alert 
+          severity={alert.severity} 
+          onClose={handleCloseAlert}
+          sx={{ mb: 2 }}
+        >
+          {alert.message}
+        </Alert>
+      )}
 
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <FormControl sx={{ minWidth: 200 }}>
@@ -99,10 +107,18 @@ const Analytics = () => {
         </FormControl>
         <Button 
           variant="contained" 
-          color="error" 
-          onClick={() => setOpenDialog(true)}
+          color="warning" 
+          onClick={() => openConfirmation('RESET_REVENUE')}
+          sx={{ mr: 2 }}
         >
           Reset Revenue
+        </Button>
+        <Button 
+          variant="contained" 
+          color="error" 
+          onClick={() => openConfirmation('CLEAR_HISTORY')}
+        >
+          Clear History
         </Button>
       </Box>
 
@@ -168,23 +184,27 @@ const Analytics = () => {
       </Grid>
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>Reset Revenue</DialogTitle>
+        <DialogTitle>
+            {dialogType === 'RESET_REVENUE' ? 'Reset Revenue' : 'Clear All History'}
+        </DialogTitle>
         <DialogContent>
           <Typography sx={{ mb: 2 }}>
-            This action will cancel all completed orders and reset the revenue to zero. 
-            This cannot be undone.
+            {dialogType === 'RESET_REVENUE' 
+                ? 'This action will cancel all completed orders and reset the revenue to zero. This cannot be undone.'
+                : 'DANGER: This action will PERMANENTLY DELETE all order history and inventory usage logs. This data cannot be recovered.'
+            }
           </Typography>
           <TextField
             fullWidth
-            label="Type 'RESET REVENUE' to confirm"
+            label={`Type '${dialogType === 'RESET_REVENUE' ? 'RESET REVENUE' : 'DELETE EVERYTHING'}' to confirm`}
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleResetRevenue} variant="contained" color="error">
-            Reset Revenue
+          <Button onClick={handleAction} variant="contained" color="error">
+            {dialogType === 'RESET_REVENUE' ? 'Reset Revenue' : 'Delete Everything'}
           </Button>
         </DialogActions>
       </Dialog>

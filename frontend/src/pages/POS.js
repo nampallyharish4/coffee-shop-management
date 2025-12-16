@@ -15,7 +15,7 @@ const POS = () => {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [cart, setCart] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
-  const [discount, setDiscount] = useState(0);
+  const [discountPercent, setDiscountPercent] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
 
 
@@ -89,14 +89,15 @@ const POS = () => {
   const clearCart = () => {
     if (cart.length === 0) return;
     setCart([]);
-    setDiscount(0);
+    setDiscountPercent('');
     setMessage({ type: 'info', text: 'Cart cleared' });
   };
 
   const calculateTotal = () => {
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const discountAmount = discount || 0;
-    const taxableAmount = subtotal - discountAmount;
+    const discountVal = parseFloat(discountPercent) || 0;
+    const discountAmount = (subtotal * discountVal) / 100;
+    const taxableAmount = Math.max(0, subtotal - discountAmount);
     const tax = taxableAmount * 0.05;
     return {
       subtotal: subtotal.toFixed(2),
@@ -126,7 +127,7 @@ const POS = () => {
       await orderService.create(order);
       setMessage({ type: 'success', text: 'Order created successfully!' });
       setCart([]);
-      setDiscount(0);
+      setDiscountPercent('');
     } catch (error) {
       setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to create order' });
     }
@@ -589,19 +590,25 @@ const POS = () => {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0 }}>
               <TextField
                 fullWidth
-                label="Discount (₹)"
+                label="Discount (%)"
                 type="number"
-                value={discount}
+                value={discountPercent}
                 onChange={(e) => {
-                  const value = parseFloat(e.target.value) || 0;
-                  const maxDiscount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                  setDiscount(Math.max(0, Math.min(value, maxDiscount)));
+                  const val = e.target.value;
+                  // Allow empty string to clear the field
+                  if (val === '') {
+                    setDiscountPercent('');
+                    return;
+                  }
+                  const numVal = parseFloat(val);
+                  if (numVal >= 0 && numVal <= 100) {
+                    setDiscountPercent(val);
+                  }
                 }}
                 size="small"
                 InputProps={{
-                  inputProps: { min: 0, step: 0.01 }
+                  inputProps: { min: 0, max: 100, step: 1 }
                 }}
-                helperText={discount > 0 ? `Max discount: ₹${cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}` : ''}
               />
 
               <FormControl fullWidth size="small">
