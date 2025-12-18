@@ -10,19 +10,9 @@ import { orderService } from '../services/api';
 const NOTIFICATION_TUNES = [
   { name: 'Kitchen Buzzer (Default)', url: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3' },
   { name: 'Bell Chime', url: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
-  { name: 'Digital Beep', url: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3' },
   { name: 'Soft Ding', url: 'https://assets.mixkit.co/active_storage/sfx/2867/2867-preview.mp3' },
-  { name: 'Store Doorbell', url: 'https://assets.mixkit.co/active_storage/sfx/198/198-preview.mp3' },
-  { name: 'Elevator Bell', url: 'https://assets.mixkit.co/active_storage/sfx/203/203-preview.mp3' },
-  { name: 'Positive Alert', url: 'https://assets.mixkit.co/active_storage/sfx/967/967-preview.mp3' },
-  { name: 'Magic Spell', url: 'https://assets.mixkit.co/active_storage/sfx/878/878-preview.mp3' },
   { name: 'Success Chime', url: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3' },
-  { name: 'Retro Game Up', url: 'https://assets.mixkit.co/active_storage/sfx/1126/1126-preview.mp3' },
-  { name: 'Short Whistle', url: 'https://assets.mixkit.co/active_storage/sfx/2099/2099-preview.mp3' },
-  { name: 'Classic Telephone', url: 'https://assets.mixkit.co/active_storage/sfx/2388/2388-preview.mp3' },
-  { name: 'Fast Sci-Fi', url: 'https://assets.mixkit.co/active_storage/sfx/177/177-preview.mp3' },
-  { name: 'Airport Announcement', url: 'https://assets.mixkit.co/active_storage/sfx/235/235-preview.mp3' },
-  { name: 'Simple Notification', url: 'https://assets.mixkit.co/active_storage/sfx/2345/2345-preview.mp3' },
+  { name: 'Airport Announcement', url: 'https://assets.mixkit.co/active_storage/sfx/235/235-preview.mp3' }
 ];
 
 const BaristaView = () => {
