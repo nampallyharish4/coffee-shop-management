@@ -78,6 +78,7 @@ public class InventoryService {
         item.setUnit(dto.getUnit());
         item.setCurrentStock(dto.getCurrentStock());
         item.setReorderLevel(dto.getReorderLevel());
+        item.setUnitPrice(dto.getUnitPrice() != null ? dto.getUnitPrice() : java.math.BigDecimal.ZERO);
     }
 
     @Autowired
@@ -99,7 +100,7 @@ public class InventoryService {
 
     @Transactional
     public void resetUsageHistory() {
-        inventoryUsageRepository.deleteAllUsage();
+        inventoryUsageRepository.deleteAll();
     }
 
     private InventoryItemDTO convertToDTO(InventoryItem item) {
@@ -111,6 +112,7 @@ public class InventoryService {
         dto.setReorderLevel(item.getReorderLevel());
         dto.setLowStock(item.isLowStock());
         dto.setOutOfStock(item.isOutOfStock());
+        dto.setUnitPrice(item.getUnitPrice());
         return dto;
     }
 }

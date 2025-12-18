@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Button, Table, TableBody, TableCell, TableHead, TableRow, Paper,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Tabs, Tab, Box,
-  Snackbar, Alert, InputAdornment, IconButton
+  Snackbar, Alert, InputAdornment
 } from '@mui/material';
 import { Print, Search } from '@mui/icons-material';
 import Layout from '../components/Layout';
@@ -204,7 +204,8 @@ const InventoryManagement = () => {
       const dataToSend = {
         ...formData,
         currentStock: formData.currentStock ? Number(formData.currentStock) : 0,
-        reorderLevel: formData.reorderLevel ? Number(formData.reorderLevel) : 0
+        reorderLevel: formData.reorderLevel ? Number(formData.reorderLevel) : 0,
+        unitPrice: formData.unitPrice ? Number(formData.unitPrice) : 0
       };
       
       // Check for duplicate name (case-insensitive)
@@ -400,6 +401,7 @@ const InventoryManagement = () => {
               <TableCell>Name</TableCell>
               <TableCell>Current Stock</TableCell>
               <TableCell>Unit</TableCell>
+              <TableCell>Unit Price</TableCell>
               <TableCell>Reorder Level</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Actions</TableCell>
@@ -411,6 +413,7 @@ const InventoryManagement = () => {
                 <TableCell>{item.name}</TableCell>
                 <TableCell>{item.currentStock}</TableCell>
                 <TableCell>{item.unit}</TableCell>
+                <TableCell>₹{Number(item.unitPrice || 0).toFixed(2)}</TableCell>
                 <TableCell>{item.reorderLevel}</TableCell>
                 <TableCell>
                   {item.outOfStock && <Chip label="Out of Stock" color="error" size="small" />}
@@ -461,6 +464,17 @@ const InventoryManagement = () => {
             value={formData.reorderLevel}
             onChange={(e) => setFormData({ ...formData, reorderLevel: e.target.value })}
             margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="Unit Price (Per Unit)"
+            type="number"
+            value={formData.unitPrice || ''}
+            onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
+            margin="normal"
+            InputProps={{
+              startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+            }}
           />
         </DialogContent>
         <DialogActions>

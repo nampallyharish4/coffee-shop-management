@@ -27,4 +27,7 @@ public class InventoryItemDTO {
     
     private Boolean lowStock;
     private Boolean outOfStock;
+
+    @PositiveOrZero(message = "Unit price cannot be negative")
+    private BigDecimal unitPrice;
 }

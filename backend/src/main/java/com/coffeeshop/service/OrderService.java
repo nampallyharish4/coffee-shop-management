@@ -178,8 +178,8 @@ public class OrderService {
 
     @Transactional
     public void deleteAllOrders() {
-        // First delete foreign key dependencies in inventory_usage
-        inventoryUsageRepository.deleteAll();
+        // First delete foreign key dependencies in inventory_usage using custom efficient query
+        inventoryUsageRepository.deleteAllInBatch();
         // Then delete all orders (cascade will handle items and payments)
         orderRepository.deleteAll();
     }

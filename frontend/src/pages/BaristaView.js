@@ -1,14 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Grid, Card, CardContent, Typography, Button, Chip, Box
+  Grid, Card, CardContent, Typography, Button, Chip, Box,
+  Switch, FormControlLabel, Snackbar, Alert, Paper, Select, MenuItem, FormControl, InputLabel
 } from '@mui/material';
+import { NotificationsActive, NotificationsOff } from '@mui/icons-material';
 import Layout from '../components/Layout';
 import { orderService } from '../services/api';
 
+const NOTIFICATION_TUNES = [
+  { name: 'Kitchen Buzzer (Default)', url: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3' },
+  { name: 'Bell Chime', url: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
+  { name: 'Digital Beep', url: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3' },
+  { name: 'Soft Ding', url: 'https://assets.mixkit.co/active_storage/sfx/2867/2867-preview.mp3' },
+  { name: 'Store Doorbell', url: 'https://assets.mixkit.co/active_storage/sfx/198/198-preview.mp3' },
+  { name: 'Elevator Bell', url: 'https://assets.mixkit.co/active_storage/sfx/203/203-preview.mp3' },
+  { name: 'Positive Alert', url: 'https://assets.mixkit.co/active_storage/sfx/967/967-preview.mp3' },
+  { name: 'Magic Spell', url: 'https://assets.mixkit.co/active_storage/sfx/878/878-preview.mp3' },
+  { name: 'Success Chime', url: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3' },
+  { name: 'Retro Game Up', url: 'https://assets.mixkit.co/active_storage/sfx/1126/1126-preview.mp3' },
+  { name: 'Short Whistle', url: 'https://assets.mixkit.co/active_storage/sfx/2099/2099-preview.mp3' },
+  { name: 'Classic Telephone', url: 'https://assets.mixkit.co/active_storage/sfx/2388/2388-preview.mp3' },
+  { name: 'Fast Sci-Fi', url: 'https://assets.mixkit.co/active_storage/sfx/177/177-preview.mp3' },
+  { name: 'Airport Announcement', url: 'https://assets.mixkit.co/active_storage/sfx/235/235-preview.mp3' },
+  { name: 'Simple Notification', url: 'https://assets.mixkit.co/active_storage/sfx/2345/2345-preview.mp3' },
+];
+
 const BaristaView = () => {
   const [orders, setOrders] = useState([]);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(false);
+  const [selectedTuneUrl, setSelectedTuneUrl] = useState(NOTIFICATION_TUNES[0].url);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '' });
+  const lastDisplayedIds = React.useRef(new Set());
+  // Initialize with selected tune
+  const notificationSound = React.useRef(new Audio(selectedTuneUrl));
 
   useEffect(() => {
+    // Load preference from localStorage
+    const savedTune = localStorage.getItem('baristaNotificationTune');
+    if (savedTune) {
+        setSelectedTuneUrl(savedTune);
+    }
+    
     loadOrders();
     const interval = setInterval(loadOrders, 10000);
     return () => {
@@ -16,17 +48,47 @@ const BaristaView = () => {
     };
   }, []);
 
+  // Update audio source when selectedTuneUrl changes
+  useEffect(() => {
+     notificationSound.current = new Audio(selectedTuneUrl);
+     notificationSound.current.volume = 1.0;
+     notificationSound.current.load();
+     localStorage.setItem('baristaNotificationTune', selectedTuneUrl);
+  }, [selectedTuneUrl]);
+
+  const playNotification = () => {
+    if (isSoundEnabled) {
+      notificationSound.current.currentTime = 0;
+      notificationSound.current.play().catch(err => console.log('Audio play failed:', err));
+    }
+    setSnackbar({ open: true, message: 'New order arrived!' });
+  };
+
   const loadOrders = async () => {
     try {
       const response = await orderService.getAll();
-      const activeOrders = response.data.data.filter(
+      const allOrders = response.data.data;
+      const activeOrders = allOrders.filter(
         o => ['CREATED', 'IN_PREPARATION', 'READY'].includes(o.status)
       );
+
+      // Only notify for orders that are actually shown (after 45s window)
+      const displayed = activeOrders.filter(shouldShowOrder);
+      const currentIds = new Set(displayed.map(o => o.id));
+      
+      const hasNewOrder = displayed.some(o => !lastDisplayedIds.current.has(o.id));
+
+      if (hasNewOrder && lastDisplayedIds.current.size > 0) {
+        playNotification();
+      }
+
+      lastDisplayedIds.current = currentIds;
       setOrders(activeOrders);
     } catch (error) {
       console.error('Failed to load orders:', error);
     }
   };
+
 
   const getTimeRemaining = (createdAt) => {
     if (!createdAt) return 0;
@@ -79,9 +141,64 @@ const BaristaView = () => {
 
   return (
     <Layout title="Barista View - Kitchen Orders">
-      <Typography variant="h5" gutterBottom>
-        Active Orders
-      </Typography>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h5" fontWeight="bold">
+          Active Orders
+        </Typography>
+        <Paper elevation={0} sx={{ p: 1, borderRadius: '12px', bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Button 
+            size="small" 
+            variant="outlined" 
+            onClick={playNotification}
+            startIcon={<NotificationsActive />}
+          >
+            Test Speaker
+          </Button>
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Notification Tone</InputLabel>
+            <Select
+              value={selectedTuneUrl}
+              label="Notification Tone"
+              onChange={(e) => setSelectedTuneUrl(e.target.value)}
+            >
+              {NOTIFICATION_TUNES.map((tune) => (
+                <MenuItem key={tune.url} value={tune.url}>
+                  {tune.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={isSoundEnabled}
+                onChange={(e) => setIsSoundEnabled(e.target.checked)}
+                color="primary"
+              />
+            }
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {isSoundEnabled ? <NotificationsActive color="primary" /> : <NotificationsOff color="action" />}
+                <Typography variant="body2" fontWeight="bold">
+                  {isSoundEnabled ? 'Sound ON' : 'Sound OFF'}
+                </Typography>
+              </Box>
+            }
+            sx={{ m: 0, px: 1 }}
+          />
+        </Paper>
+      </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert severity="info" variant="filled" sx={{ width: '100%', borderRadius: '12px' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
       <Grid container spacing={3}>
         {displayedOrders.map(order => (
           <Grid item xs={12} sm={6} md={4} key={order.id}>

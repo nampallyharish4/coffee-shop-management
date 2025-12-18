@@ -41,6 +41,7 @@ const Analytics = () => {
 
   useEffect(() => {
     loadAnalytics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range]);
 
   const handleAction = async () => {
@@ -56,7 +57,7 @@ const Analytics = () => {
 
     try {
       if (dialogType === 'RESET_REVENUE') {
-        const response = await orderService.resetRevenue();
+        await orderService.resetRevenue();
       } else {
         await orderService.deleteAll();
       }

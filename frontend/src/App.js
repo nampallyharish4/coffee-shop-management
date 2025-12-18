@@ -58,8 +58,6 @@ function App() {
   const [isBackendReady, setIsBackendReady] = React.useState(false);
 
   React.useEffect(() => {
-    const startTime = Date.now();
-    const MIN_LOAD_TIME = 7000; // 7 seconds
 
     const checkBackend = async () => {
       try {
@@ -70,15 +68,8 @@ function App() {
           mode: 'no-cors' // We just want to know if it's reachable
         });
         
-        // Backend is ready. Check if we need to wait longer to meet the minimum load time.
-        const elapsedTime = Date.now() - startTime;
-        const remainingTime = MIN_LOAD_TIME - elapsedTime;
-
-        if (remainingTime > 0) {
-            setTimeout(() => setIsBackendReady(true), remainingTime);
-        } else {
-            setIsBackendReady(true);
-        }
+        // Backend is ready.
+        setIsBackendReady(true);
 
       } catch (error) {
         // Retry after 2 seconds

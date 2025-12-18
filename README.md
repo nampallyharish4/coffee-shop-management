@@ -107,6 +107,12 @@ COFFEE-SHOP/
 Once the backend is running, you can explore the REST API via Swagger UI:
 *   URL: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
 
+## ☁️ Azure Deployment
+
+This project includes a comprehensive guide and scripts to help you migrate to Microsoft Azure.
+*   **Guide**: See `AZURE_MIGRATION_GUIDE.md` for detailed step-by-step instructions.
+*   **Setup Script**: Run `azure-setup.ps1` to automatically create the necessary Azure resources (Database, Web App, etc.).
+
 ## 🛡️ License
 
 This project is open-source and available for personal and educational use.
