@@ -216,7 +216,7 @@ const Dashboard = () => {
             </Grid>
 
             {/* Charts & Tables */}
-            <Grid item xs={12} lg={7}>
+            <Grid item xs={12} md={8} lg={8}>
               <Paper sx={{ p: 3, borderRadius: '24px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
                 <Typography variant="h6" fontWeight="800" sx={{ mb: 3 }}>Top Selling Items</Typography>
                 <Box sx={{ height: 350, width: '100%' }}>
@@ -236,27 +236,7 @@ const Dashboard = () => {
               </Paper>
             </Grid>
 
-            <Grid item xs={12} lg={7}>
-              <Paper sx={{ p: 3, borderRadius: '24px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
-                <Typography variant="h6" fontWeight="800" sx={{ mb: 3 }}>Inventory Usage Report</Typography>
-                <Box sx={{ height: 350, width: '100%' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={inventoryUsage} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                      <XAxis dataKey="itemName" axisLine={false} tickLine={false} style={{ fontSize: '0.8rem', fontWeight: 600 }} />
-                      <YAxis axisLine={false} tickLine={false} style={{ fontSize: '0.8rem', fontWeight: 600 }} />
-                      <RechartsTooltip 
-                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 16px rgba(0,0,0,0.1)' }}
-                        cursor={{ fill: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
-                      />
-                      <Bar dataKey="totalUsed" fill={theme.palette.secondary.main} radius={[8, 8, 0, 0]} barSize={40} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Box>
-              </Paper>
-            </Grid>
-
-            <Grid item xs={12} lg={5}>
+            <Grid item xs={12} md={4} lg={4}>
               <Paper sx={{ p: 3, borderRadius: '24px', border: '1px solid', borderColor: 'divider', boxShadow: 'none', height: '100%' }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
                   <Typography variant="h6" fontWeight="800">Staff Performance</Typography>
@@ -293,6 +273,26 @@ const Dashboard = () => {
                     )}
                   </TableBody>
                 </Table>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={12} lg={12}>
+              <Paper sx={{ p: 3, borderRadius: '24px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+                <Typography variant="h6" fontWeight="800" sx={{ mb: 3 }}>Inventory Usage Report</Typography>
+                <Box sx={{ height: 350, width: '100%' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={inventoryUsage} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                      <XAxis dataKey="itemName" axisLine={false} tickLine={false} style={{ fontSize: '0.8rem', fontWeight: 600 }} />
+                      <YAxis axisLine={false} tickLine={false} style={{ fontSize: '0.8rem', fontWeight: 600 }} />
+                      <RechartsTooltip 
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 16px rgba(0,0,0,0.1)' }}
+                        cursor={{ fill: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                      />
+                      <Bar dataKey="totalUsed" fill={theme.palette.secondary.main} radius={[8, 8, 0, 0]} barSize={40} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
               </Paper>
             </Grid>
           </Grid>
