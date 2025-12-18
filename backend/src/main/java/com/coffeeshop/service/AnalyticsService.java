@@ -66,7 +66,7 @@ public class AnalyticsService {
 
     public List<Map<String, Object>> getInventoryUsage(String range) {
         LocalDateTime[] dateRange = getDateRange(range);
-        List<Object[]> results = inventoryUsageRepository.findUsageSummary(dateRange[0], dateRange[1]);
+        List<Object[]> results = inventoryUsageRepository.findUsageSummary(dateRange[0], dateRange[1], Order.OrderStatus.CANCELLED);
 
         return results.stream()
                 .map(result -> {
