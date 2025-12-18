@@ -281,7 +281,8 @@ const MenuManagement = () => {
         </Box>
       )}
       
-      <Paper>
+      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+        <Box sx={{ maxHeight: '70vh', overflow: 'auto' }}>
         <Table>
           <TableHead>
             <TableRow>
@@ -331,6 +332,7 @@ const MenuManagement = () => {
             ))}
           </TableBody>
         </Table>
+        </Box>
       </Paper>
 
       <Dialog

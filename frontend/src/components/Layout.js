@@ -4,7 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar, Toolbar, Typography, IconButton, Drawer, List, ListItem,
   ListItemIcon, ListItemText, Box, Container, Divider, useTheme, useMediaQuery,
-  Avatar, Tooltip, ListItemButton
+  Avatar, Tooltip, ListItemButton, Dialog, DialogTitle, DialogContent, 
+  DialogContentText, DialogActions, Button
 } from '@mui/material';
 import {
   Menu as MenuIcon, Dashboard as DashboardIcon, ShoppingCart,
@@ -18,6 +19,7 @@ const Layout = ({ children, title, headerContent }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,9 +39,18 @@ const Layout = ({ children, title, headerContent }) => {
     setMobileOpen(!mobileOpen);
   };
 
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
+    setLogoutDialogOpen(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    setLogoutDialogOpen(false);
     logout();
     navigate('/login');
+  };
+
+  const handleLogoutCancel = () => {
+    setLogoutDialogOpen(false);
   };
 
   const isDashboard = location.pathname === '/dashboard';
@@ -194,7 +205,7 @@ const Layout = ({ children, title, headerContent }) => {
               </Tooltip>
               <Tooltip title="Logout">
                 <IconButton 
-                  onClick={handleLogout}
+                  onClick={handleLogoutClick}
                   sx={{ 
                     ml: 1, 
                     color: 'error.main',
@@ -303,6 +314,31 @@ const Layout = ({ children, title, headerContent }) => {
           {children}
         </Container>
       </Box>
+
+      <Dialog
+        open={logoutDialogOpen}
+        onClose={handleLogoutCancel}
+        PaperProps={{
+          sx: { borderRadius: '16px', padding: 1 }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 'bold' }}>
+          Confirm Logout
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to log out of the Coffee Shop Management System?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={handleLogoutCancel} color="inherit" sx={{ borderRadius: '8px' }}>
+            Cancel
+          </Button>
+          <Button onClick={handleLogoutConfirm} variant="contained" color="error" autoFocus sx={{ borderRadius: '8px', boxShadow: 'none' }}>
+            Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

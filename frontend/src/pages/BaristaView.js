@@ -17,10 +17,11 @@ const NOTIFICATION_TUNES = [
 
 const BaristaView = () => {
   const [orders, setOrders] = useState([]);
-  const [isSoundEnabled, setIsSoundEnabled] = useState(false);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [selectedTuneUrl, setSelectedTuneUrl] = useState(NOTIFICATION_TUNES[0].url);
   const [snackbar, setSnackbar] = useState({ open: false, message: '' });
   const lastDisplayedIds = React.useRef(new Set());
+  const isInitialized = React.useRef(false);
   // Initialize with selected tune
   const notificationSound = React.useRef(new Audio(selectedTuneUrl));
 
@@ -29,6 +30,13 @@ const BaristaView = () => {
     const savedTune = localStorage.getItem('baristaNotificationTune');
     if (savedTune) {
         setSelectedTuneUrl(savedTune);
+    }
+
+    const savedSoundEnabled = localStorage.getItem('baristaSoundEnabled');
+    if (savedSoundEnabled !== null) {
+      setIsSoundEnabled(savedSoundEnabled === 'true');
+    } else {
+      setIsSoundEnabled(true);
     }
     
     loadOrders();
@@ -68,12 +76,16 @@ const BaristaView = () => {
       
       const hasNewOrder = displayed.some(o => !lastDisplayedIds.current.has(o.id));
 
-      if (hasNewOrder && lastDisplayedIds.current.size > 0) {
+      // Play sound if:
+      // 1. We have initialized (don't play on first load)
+      // 2. We have a new order that wasn't there before
+      if (isInitialized.current && hasNewOrder) {
         playNotification();
       }
 
       lastDisplayedIds.current = currentIds;
       setOrders(activeOrders);
+      isInitialized.current = true;
     } catch (error) {
       console.error('Failed to load orders:', error);
     }
@@ -162,7 +174,10 @@ const BaristaView = () => {
             control={
               <Switch
                 checked={isSoundEnabled}
-                onChange={(e) => setIsSoundEnabled(e.target.checked)}
+                onChange={(e) => {
+                  setIsSoundEnabled(e.target.checked);
+                  localStorage.setItem('baristaSoundEnabled', e.target.checked);
+                }}
                 color="primary"
               />
             }

@@ -91,6 +91,7 @@ const Dashboard = () => {
     { title: 'Barista', icon: <Restaurant />, path: '/barista', roles: ['ROLE_BARISTA', 'ROLE_ADMIN'], color: '#8B4513', desc: 'Kitchen View' },
     { title: 'Menu', icon: <MenuIcon />, path: '/menu', roles: ['ROLE_ADMIN'], color: '#A0522D', desc: 'Edit Items' },
     { title: 'Users', icon: <People />, path: '/users', roles: ['ROLE_ADMIN'], color: '#DEB887', desc: 'Staff Access' },
+    { title: 'Inventory', icon: <Inventory />, path: '/inventory', roles: ['ROLE_INVENTORY_MANAGER', 'ROLE_ADMIN'], color: '#2E7D32', desc: 'Stock Management' }, // Added Inventory Card
   ];
 
   const getTimeGreeting = () => {
