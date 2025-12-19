@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Button, Table, TableBody, TableCell, TableHead, TableRow, Paper,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Tabs, Tab, Box,
-  Snackbar, Alert, InputAdornment
+  Snackbar, Alert, InputAdornment, Stack
 } from '@mui/material';
 import { Print, Search } from '@mui/icons-material';
 import Layout from '../components/Layout';
@@ -312,7 +312,12 @@ const InventoryManagement = () => {
 
   return (
     <Layout title="Inventory Management">
-      <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+      <Stack 
+        direction={{ xs: 'column', md: 'row' }} 
+        spacing={2} 
+        sx={{ mb: 2 }}
+        alignItems={{ xs: 'stretch', md: 'center' }}
+      >
         <TextField 
           placeholder="Search items..." 
           size="small"
@@ -328,107 +333,118 @@ const InventoryManagement = () => {
           sx={{ 
             bgcolor: 'background.paper', 
             borderRadius: 1,
-            width: '300px',
+            flexGrow: 1,
+            maxWidth: { md: '300px' },
             '& .MuiInputBase-input': { color: 'text.primary' },
             '& .MuiSvgIcon-root': { color: 'text.secondary' }
           }}
         />
-        <Button variant="contained" onClick={() => openDialog()}>
-          Add Inventory Item
-        </Button>
-        <Button 
-          variant="outlined" 
-          startIcon={<Print />}
-          onClick={handlePrintRestockReport}
-          color="secondary"
-        >
-          Print Restock Report
-        </Button>
-        {tab === 1 && (
-          <Button 
-            variant="contained" 
-            color="error" 
-            onClick={() => setResetUsageOpen(true)}
-            sx={{ ml: 'auto' }}
-          >
-            Reset Usage History
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ ml: { md: 'auto' } }}>
+          <button style={{ display: 'none' }} onClick={() => openDialog()}>HIDDEN</button> 
+          <Button variant="contained" onClick={() => openDialog()} fullWidth={tab === 0}>
+            Add Item
           </Button>
-        )}
-      </Box>
+          <Button 
+            variant="outlined" 
+            startIcon={<Print />}
+            onClick={handlePrintRestockReport}
+            color="secondary"
+          >
+            Restock Report
+          </Button>
+          {tab === 1 && (
+            <Button 
+              variant="contained" 
+              color="error" 
+              onClick={() => setResetUsageOpen(true)}
+            >
+              Reset History
+            </Button>
+          )}
+        </Stack>
+      </Stack>
 
-      <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 2 }}>
+      <Tabs 
+        value={tab} 
+        onChange={(e, v) => setTab(v)} 
+        sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+        variant="scrollable"
+        scrollButtons="auto"
+      >
         <Tab label="All Items" />
         <Tab label="Usage History" />
       </Tabs>
 
       {tab === 1 ? (
-        <Paper>
-          <Table>
+        <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: '12px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+          <Box sx={{ overflowX: 'auto' }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ minWidth: 150 }}>Date & Time</TableCell>
+                  <TableCell sx={{ minWidth: 150 }}>Item Name</TableCell>
+                  <TableCell sx={{ minWidth: 100 }}>Source</TableCell>
+                  <TableCell sx={{ minWidth: 120 }}>Quantity Deducted</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {usageHistory.map(log => (
+                  <TableRow key={log.id}>
+                    <TableCell>{new Date(log.usedAt).toLocaleString()}</TableCell>
+                    <TableCell>{log.inventoryItemName}</TableCell>
+                    <TableCell>Order #{log.orderId}</TableCell>
+                    <TableCell sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                      {formatUsage(log.quantityUsed, items.find(i => i.name === log.inventoryItemName)?.unit)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {usageHistory.length === 0 && (
+                   <TableRow>
+                     <TableCell colSpan={4} align="center">No usage history found</TableCell>
+                   </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Box>
+        </Paper>
+      ) : (
+      <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: '12px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+        <Box sx={{ overflowX: 'auto' }}>
+          <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>Date & Time</TableCell>
-                <TableCell>Item Name</TableCell>
-                <TableCell>Source</TableCell>
-                <TableCell>Quantity Deducted</TableCell>
-
+                <TableCell sx={{ minWidth: 150 }}>Name</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>Current Stock</TableCell>
+                <TableCell sx={{ minWidth: 80 }}>Unit</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>Unit Price</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>Reorder Level</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>Status</TableCell>
+                <TableCell sx={{ minWidth: 250 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {usageHistory.map(log => (
-                <TableRow key={log.id}>
-                  <TableCell>{new Date(log.usedAt).toLocaleString()}</TableCell>
-                  <TableCell>{log.inventoryItemName}</TableCell>
-                  <TableCell>Order #{log.orderId}</TableCell>
-                  <TableCell sx={{ color: 'error.main', fontWeight: 'bold' }}>
-                    {formatUsage(log.quantityUsed, items.find(i => i.name === log.inventoryItemName)?.unit)}
+              {filteredItems.map(item => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell>{item.currentStock}</TableCell>
+                  <TableCell>{item.unit}</TableCell>
+                  <TableCell>₹{Number(item.unitPrice || 0).toFixed(2)}</TableCell>
+                  <TableCell>{item.reorderLevel}</TableCell>
+                  <TableCell>
+                    {item.outOfStock && <Chip label="Out of Stock" color="error" size="small" />}
+                    {item.lowStock && !item.outOfStock && <Chip label="Low Stock" color="warning" size="small" />}
+                    {!item.lowStock && <Chip label="OK" color="success" size="small" />}
                   </TableCell>
-
+                  <TableCell>
+                    <Button onClick={() => openAddStock(item)} size="small">Add Stock</Button>
+                    <Button onClick={() => openDialog(item)} size="small">Edit</Button>
+                    <Button onClick={() => handleDeleteClick(item.id)} size="small" color="error">Delete</Button>
+                  </TableCell>
                 </TableRow>
               ))}
-              {usageHistory.length === 0 && (
-                 <TableRow>
-                   <TableCell colSpan={4} align="center">No usage history found</TableCell>
-                 </TableRow>
-              )}
             </TableBody>
           </Table>
-        </Paper>
-      ) : (
-      <Paper>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Current Stock</TableCell>
-              <TableCell>Unit</TableCell>
-              <TableCell>Unit Price</TableCell>
-              <TableCell>Reorder Level</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredItems.map(item => (
-              <TableRow key={item.id}>
-                <TableCell>{item.name}</TableCell>
-                <TableCell>{item.currentStock}</TableCell>
-                <TableCell>{item.unit}</TableCell>
-                <TableCell>₹{Number(item.unitPrice || 0).toFixed(2)}</TableCell>
-                <TableCell>{item.reorderLevel}</TableCell>
-                <TableCell>
-                  {item.outOfStock && <Chip label="Out of Stock" color="error" size="small" />}
-                  {item.lowStock && !item.outOfStock && <Chip label="Low Stock" color="warning" size="small" />}
-                  {!item.lowStock && <Chip label="OK" color="success" size="small" />}
-                </TableCell>
-                <TableCell>
-                  <Button onClick={() => openAddStock(item)} size="small">Add Stock</Button>
-                  <Button onClick={() => openDialog(item)} size="small">Edit</Button>
-                  <Button onClick={() => handleDeleteClick(item.id)} size="small" color="error">Delete</Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        </Box>
       </Paper>
       )}
 

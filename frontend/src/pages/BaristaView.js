@@ -57,9 +57,18 @@ const BaristaView = () => {
   const playNotification = () => {
     if (isSoundEnabled) {
       notificationSound.current.currentTime = 0;
-      notificationSound.current.play().catch(err => console.log('Audio play failed:', err));
+      notificationSound.current.play().catch(err => {
+        console.warn('Audio play failed (likely browser policy):', err);
+        setSnackbar({ 
+          open: true, 
+          message: 'New order! (Tap anywhere to enable sound)', 
+          severity: 'warning' 
+        });
+      });
     }
-    setSnackbar({ open: true, message: 'New order arrived!' });
+    if (!snackbar.open || snackbar.severity !== 'warning') {
+        setSnackbar({ open: true, message: 'New order arrived!', severity: 'info' });
+    }
   };
 
   const loadOrders = async () => {
@@ -143,20 +152,31 @@ const BaristaView = () => {
 
   return (
     <Layout title="Barista View - Kitchen Orders">
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', md: 'center' }, gap: 2 }}>
         <Typography variant="h5" fontWeight="bold">
           Active Orders
         </Typography>
-        <Paper elevation={0} sx={{ p: 1, borderRadius: '12px', bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Paper elevation={0} sx={{ 
+          p: 1.5, 
+          borderRadius: '12px', 
+          bgcolor: 'background.paper', 
+          border: '1px solid', 
+          borderColor: 'divider', 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 2, 
+          alignItems: { xs: 'stretch', sm: 'center' } 
+        }}>
           <Button 
             size="small" 
             variant="outlined" 
             onClick={playNotification}
             startIcon={<NotificationsActive />}
+            fullWidth={false}
           >
             Test Speaker
           </Button>
-          <FormControl size="small" sx={{ minWidth: 150 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 180 } }}>
             <InputLabel>Notification Tone</InputLabel>
             <Select
               value={selectedTuneUrl}
@@ -200,7 +220,7 @@ const BaristaView = () => {
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert severity="info" variant="filled" sx={{ width: '100%', borderRadius: '12px' }}>
+        <Alert severity={snackbar.severity || 'info'} variant="filled" sx={{ width: '100%', borderRadius: '12px' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

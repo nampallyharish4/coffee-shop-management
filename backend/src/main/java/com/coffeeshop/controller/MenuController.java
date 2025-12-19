@@ -19,7 +19,6 @@ import java.util.List;
 @RequestMapping("/api/menu")
 @Tag(name = "Menu Management", description = "Menu management endpoints")
 @SecurityRequirement(name = "Bearer Authentication")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class MenuController {
     @Autowired
     private MenuService menuService;

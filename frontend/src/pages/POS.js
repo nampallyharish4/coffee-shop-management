@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
   Grid, Card, CardContent, Typography, Button, TextField, Select, MenuItem,
-  FormControl, InputLabel, Paper, Box, IconButton, Chip, Divider, Snackbar, Alert, InputAdornment, Stack
+  FormControl, InputLabel, Paper, Box, IconButton, Chip, Divider, Snackbar, Alert, InputAdornment, Stack,
+  useTheme, useMediaQuery
 } from '@mui/material';
 import { Add, Remove, Delete, ShoppingCart, Search, ClearAll } from '@mui/icons-material';
 import Layout from '../components/Layout';
 import { menuService, orderService, categoryService } from '../services/api';
 
 const POS = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const [menuItems, setMenuItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [filteredMenuItems, setFilteredMenuItems] = useState([]);
@@ -99,11 +103,16 @@ const POS = () => {
     const discountAmount = (subtotal * discountVal) / 100;
     const taxableAmount = Math.max(0, subtotal - discountAmount);
     const tax = taxableAmount * 0.05;
+    const rawTotal = taxableAmount + tax;
+    const roundedTotal = Math.round(rawTotal);
+    const roundOff = roundedTotal - rawTotal;
+
     return {
       subtotal: subtotal.toFixed(2),
       discount: discountAmount.toFixed(2),
       tax: tax.toFixed(2),
-      total: (taxableAmount + tax).toFixed(2)
+      roundOff: roundOff.toFixed(2),
+      total: roundedTotal.toFixed(2)
     };
   };
 
@@ -117,6 +126,7 @@ const POS = () => {
     const order = {
       items: cart,
       discount: parseFloat(totals.discount),
+      roundOff: parseFloat(totals.roundOff),
       payment: {
         method: paymentMethod,
         amount: parseFloat(totals.total)
@@ -147,14 +157,15 @@ const POS = () => {
       title="Point of Sale" 
       headerContent={
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h5" fontWeight="bold" color="primary">
+          <Typography variant="h6" fontWeight="bold" color="primary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
             Menu Items
           </Typography>
           <Chip 
             icon={<ShoppingCart />} 
-            label={`${cart.length} items`} 
+            label={isMobile ? `${cart.length}` : `${cart.length} items`} 
             color="primary" 
             variant="outlined"
+            size="small"
           />
         </Box>
       }
@@ -163,7 +174,7 @@ const POS = () => {
         open={!!message.text}
         autoHideDuration={6000}
         onClose={handleCloseToast}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert 
           onClose={handleCloseToast} 
@@ -179,13 +190,20 @@ const POS = () => {
         {/* Menu Items Section */}
         <Grid item xs={12} md={8}>
 
-          <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 1 }}>
+          <Stack direction="row" spacing={1} sx={{ 
+            mb: 2, 
+            overflowX: 'auto', 
+            pb: 1,
+            '&::-webkit-scrollbar': { height: '4px' },
+            '&::-webkit-scrollbar-thumb': { backgroundColor: 'divider', borderRadius: '4px' }
+          }}>
             <Chip 
               label="All" 
               onClick={() => setSelectedCategory('ALL')}
               color={selectedCategory === 'ALL' ? "primary" : "default"}
               variant={selectedCategory === 'ALL' ? "filled" : "outlined"}
               clickable
+              size="small"
             />
             {categories.map(cat => (
               <Chip
@@ -195,6 +213,7 @@ const POS = () => {
                 color={selectedCategory === cat.id ? "primary" : "default"}
                 variant={selectedCategory === cat.id ? "filled" : "outlined"}
                 clickable
+                size="small"
               />
             ))}
           </Stack>
@@ -237,28 +256,32 @@ const POS = () => {
               },
             }}
           >
-            <Grid container spacing={2} sx={{ p: 1 }}>
+            <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ p: { xs: 0, sm: 1 } }}>
             {filteredMenuItems.map(item => (
-              <Grid item xs={6} sm={6} md={6} lg={4} key={item.id}>
+              <Grid item xs={6} sm={4} md={6} lg={4} xl={3} key={item.id}>
                 <Card 
+                  onClick={() => addToCart(item)}
                   sx={{ 
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    borderRadius: 3,
+                    borderRadius: { xs: 2, sm: 3 },
                     overflow: 'hidden',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    cursor: 'default',
+                    transition: 'all 0.2s ease-in-out',
+                    cursor: 'pointer',
                     border: '1px solid',
                     borderColor: 'divider',
-                    boxShadow: 2,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                     '&:hover': {
                       transform: 'translateY(-4px)',
-                      boxShadow: 8,
+                      boxShadow: '0 12px 24px rgba(0,0,0,0.1)',
                       borderColor: 'primary.main',
                       '& .item-image': {
-                        transform: 'scale(1.1)'
+                        transform: 'scale(1.05)'
                       }
+                    },
+                    '&:active': {
+                      transform: 'scale(0.98)'
                     }
                   }}
                 >
@@ -266,9 +289,9 @@ const POS = () => {
                   <Box
                     sx={{
                       width: '100%',
-                      height: 200,
+                      height: { xs: 100, sm: 140, md: 160, lg: 180 },
                       overflow: 'hidden',
-                      backgroundColor: '#f5f5f5',
+                      backgroundColor: 'grey.100',
                       position: 'relative',
                       display: 'flex',
                       alignItems: 'center',
@@ -327,8 +350,8 @@ const POS = () => {
                       variant="subtitle2" 
                       fontWeight="bold"
                       sx={{ 
-                        fontSize: '0.875rem',
-                        lineHeight: 1.3,
+                        fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                        lineHeight: 1.2,
                         mb: 0.5,
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
@@ -344,9 +367,9 @@ const POS = () => {
                     <Typography 
                       variant="h6" 
                       color="primary"
-                      fontWeight="bold"
+                      fontWeight="800"
                       sx={{ 
-                        fontSize: '1rem',
+                        fontSize: { xs: '0.9rem', sm: '1.1rem' },
                         mt: 'auto',
                         mb: 0.5
                       }}
@@ -427,7 +450,7 @@ const POS = () => {
         <Grid item xs={12} md={4}>
           <Paper 
             sx={{ 
-              p: 3,
+              p: { xs: 2, sm: 3 },
               borderRadius: 2,
               boxShadow: 3,
               display: 'flex',
@@ -435,7 +458,8 @@ const POS = () => {
               position: { xs: 'relative', md: 'sticky' },
               top: { md: 100 },
               height: { xs: 'auto', md: 'calc(100vh - 120px)' },
-              maxHeight: { xs: '80vh', md: 'calc(100vh - 120px)' }
+              maxHeight: { xs: 'none', md: 'calc(100vh - 120px)' },
+              mt: { xs: 4, md: 0 }
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
@@ -650,6 +674,14 @@ const POS = () => {
                   <Typography variant="body2" color="text.secondary">Tax (5%):</Typography>
                   <Typography variant="body2" fontWeight="medium">₹{totals.tax}</Typography>
                 </Box>
+                {Math.abs(parseFloat(totals.roundOff)) > 0.001 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="body2" color="text.secondary">Round Off:</Typography>
+                    <Typography variant="body2" fontWeight="medium">
+                      {parseFloat(totals.roundOff) > 0 ? '+' : ''}₹{totals.roundOff}
+                    </Typography>
+                  </Box>
+                )}
                 <Divider sx={{ my: 1 }} />
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="h6" fontWeight="bold">Total:</Typography>

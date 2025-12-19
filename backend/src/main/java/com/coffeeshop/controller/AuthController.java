@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Authentication endpoints")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class AuthController {
     @Autowired
     private AuthService authService;
@@ -31,7 +30,7 @@ public class AuthController {
                     .body(new ApiResponse(false, "Invalid email or password"));
         } catch (Exception e) {
             return ResponseEntity.status(500)
-                    .body(new ApiResponse(false, "Login failed: " + e.getMessage()));
+                    .body(new ApiResponse(false, "Authentication failed. Please check your credentials."));
         }
     }
 }

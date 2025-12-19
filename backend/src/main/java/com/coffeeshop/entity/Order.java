@@ -48,6 +48,9 @@ public class Order {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal total = BigDecimal.ZERO;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal roundOff = BigDecimal.ZERO;
+
     private String couponCode;
 
     private String cancellationReason;

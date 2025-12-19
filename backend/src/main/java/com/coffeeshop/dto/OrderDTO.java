@@ -18,6 +18,7 @@ public class OrderDTO {
     private BigDecimal discount;
     private BigDecimal tax;
     private BigDecimal total;
+    private BigDecimal roundOff;
     private String couponCode;
     private String cancellationReason;
     private LocalDateTime createdAt;

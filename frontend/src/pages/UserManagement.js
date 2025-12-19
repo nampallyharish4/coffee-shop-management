@@ -86,20 +86,21 @@ const UserManagement = () => {
 
   return (
     <Layout title="User Management">
-      <Button variant="contained" onClick={() => openDialog()} sx={{ mb: 2 }}>
+      <Button variant="contained" onClick={() => openDialog()} sx={{ mb: 2, width: { xs: '100%', sm: 'auto' } }}>
         Add User
       </Button>
-      <Paper>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Roles</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
+      <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: '12px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+        <Box sx={{ overflowX: 'auto' }}>
+          <Table stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ minWidth: 150 }}>Name</TableCell>
+                <TableCell sx={{ minWidth: 200 }}>Email</TableCell>
+                <TableCell sx={{ minWidth: 200 }}>Roles</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>Status</TableCell>
+                <TableCell sx={{ minWidth: 150 }}>Actions</TableCell>
+              </TableRow>
+            </TableHead>
           <TableBody>
             {users.map(user => (
               <TableRow key={user.id}>
@@ -119,7 +120,8 @@ const UserManagement = () => {
             ))}
           </TableBody>
         </Table>
-      </Paper>
+      </Box>
+    </Paper>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editUser ? 'Edit' : 'Add'} User</DialogTitle>

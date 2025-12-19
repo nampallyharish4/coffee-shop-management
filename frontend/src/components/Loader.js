@@ -3,19 +3,25 @@ import './Loader.css';
 
 const Loader = () => {
   return (
-    <div className="loader-wrapper">
-      <span className="loader-letter">C</span>
-      <span className="loader-letter">L</span>
-      <span className="loader-letter">O</span>
-      <span className="loader-letter">U</span>
-      <span className="loader-letter">D</span>
-      <span className="loader-letter">&nbsp;</span>
-      <span className="loader-letter">C</span>
-      <span className="loader-letter">A</span>
-      <span className="loader-letter">F</span>
-      <span className="loader-letter">E</span>
-
-      <div className="loader"></div>
+    <div className="loader-overlay">
+      <div className="loader-container">
+        <div className="coffee-cup">
+          <div className="smoke-container">
+            <span className="smoke s1"></span>
+            <span className="smoke s2"></span>
+            <span className="smoke s3"></span>
+          </div>
+          <div className="cup-body"></div>
+          <div className="cup-handle"></div>
+          <div className="cup-saucer"></div>
+        </div>
+        <div className="loader-text">
+          <span className="brand-name">CLOUD CAFE</span>
+          <div className="loading-bar">
+            <div className="progress"></div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -239,62 +239,49 @@ const MenuManagement = () => {
         </Alert>
       </Snackbar>
 
-      {/* Only show Add Menu Item button to admins */}
-      {hasRole('ROLE_ADMIN') && (
-        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Button variant="contained" onClick={() => openDialog()}>
+      <Box sx={{ 
+        mb: 4, 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' }, 
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'stretch', sm: 'center' },
+        gap: 2 
+      }}>
+        {hasRole('ROLE_ADMIN') ? (
+          <Button variant="contained" onClick={() => openDialog()} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Add Menu Item
           </Button>
-          
-          <FormControl sx={{ minWidth: 200 }} size="small">
-            <InputLabel>Filter by Category</InputLabel>
-            <Select
-              value={selectedCategory}
-              label="Filter by Category"
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <MenuItem value="ALL">All Categories</MenuItem>
-              {categories.map(cat => (
-                <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-      )}
-
-      {/* Show filter for non-admins */}
-      {!hasRole('ROLE_ADMIN') && (
-        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-          <FormControl sx={{ minWidth: 200 }} size="small">
-            <InputLabel>Filter by Category</InputLabel>
-            <Select
-              value={selectedCategory}
-              label="Filter by Category"
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <MenuItem value="ALL">All Categories</MenuItem>
-              {categories.map(cat => (
-                <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-      )}
+        ) : <Box />}
+        
+        <FormControl sx={{ minWidth: { xs: '100%', sm: 200 } }} size="small">
+          <InputLabel>Filter by Category</InputLabel>
+          <Select
+            value={selectedCategory}
+            label="Filter by Category"
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <MenuItem value="ALL">All Categories</MenuItem>
+            {categories.map(cat => (
+              <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
       
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <Box sx={{ maxHeight: '70vh', overflow: 'auto' }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Image</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Price</TableCell>
-              <TableCell>Active</TableCell>
-              {/* Only show Actions column to admins */}
-              {hasRole('ROLE_ADMIN') && <TableCell>Actions</TableCell>}
-            </TableRow>
-          </TableHead>
+      <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: '12px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+        <Box sx={{ overflowX: 'auto' }}>
+          <Table stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ minWidth: 80 }}>Image</TableCell>
+                <TableCell sx={{ minWidth: 150 }}>Name</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>Category</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>Price</TableCell>
+                <TableCell sx={{ minWidth: 80 }}>Active</TableCell>
+                {/* Only show Actions column to admins */}
+                {hasRole('ROLE_ADMIN') && <TableCell sx={{ minWidth: 150 }}>Actions</TableCell>}
+              </TableRow>
+            </TableHead>
           <TableBody>
             {items
               .filter(item => selectedCategory === 'ALL' || item.categoryId === selectedCategory || item.category?.id === selectedCategory)

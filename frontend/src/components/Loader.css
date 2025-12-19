@@ -1,139 +1,192 @@
-/* From Uiverse.io by dexter-st */ 
-.loader-wrapper {
-  position: fixed; /* Fixed position to cover the screen */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@800&family=Outfit:wght@300;400;600&display=swap');
+
+.loader-overlay {
+  position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
+  background: radial-gradient(circle at center, #2c1e14 0%, #1a1a1a 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #20262c; /* Ensure background acts as overlay */
-  z-index: 9999; /* High Z-index to be on top */
-
-  font-family: "Cinzel", serif; /* Aesthetic font */
-  font-size: 5em; /* Significantly increased size */
-  font-weight: 600;
-  user-select: none;
-  color: #fff;
+  z-index: 10000;
+  overflow: hidden;
 }
 
-.loader {
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 50px;
+  perspective: 1000px;
+}
+
+/* Coffee Cup Animation */
+.coffee-cup {
+  position: relative;
+  width: 120px;
+  height: 90px;
+}
+
+.cup-body {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, #fdfdfd 0%, #e0e0e0 100%);
+  border-radius: 0 0 60px 60px;
+  box-shadow: 
+    inset 0 -10px 20px rgba(0,0,0,0.1),
+    0 15px 35px rgba(0,0,0,0.4);
+  overflow: hidden;
+}
+
+.cup-body::after {
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
-  height: 100%;
   width: 100%;
-  z-index: 1;
-
-  background-color: transparent;
-  mask: repeating-linear-gradient(
-    90deg,
-    transparent 0,
-    transparent 6px,
-    black 7px,
-    black 8px
-  );
+  height: 20%;
+  background: rgba(255,255,255,0.8);
+  filter: blur(5px);
 }
 
-.loader::after {
-  content: "";
+.cup-handle {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-
-  background-image: radial-gradient(circle at 50% 50%, #ff0 0%, transparent 50%),
-    radial-gradient(circle at 45% 45%, #f00 0%, transparent 45%),
-    radial-gradient(circle at 55% 55%, #0ff 0%, transparent 45%),
-    radial-gradient(circle at 45% 55%, #0f0 0%, transparent 45%),
-    radial-gradient(circle at 55% 45%, #00f 0%, transparent 45%);
-  mask: radial-gradient(
-    circle at 50% 50%,
-    transparent 0%,
-    transparent 10%,
-    black 25%
-  );
-  animation:
-    transform-animation 2s infinite alternate,
-    opacity-animation 4s infinite;
-  animation-timing-function: cubic-bezier(0.6, 0.8, 0.5, 1);
+  top: 15px;
+  right: -30px;
+  width: 50px;
+  height: 50px;
+  border: 10px solid #fdfdfd;
+  border-left: none;
+  border-radius: 0 30px 30px 0;
+  box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
 }
 
-@keyframes transform-animation {
+.cup-saucer {
+  position: absolute;
+  bottom: -20px;
+  left: -25px;
+  width: 170px;
+  height: 20px;
+  background: #fdfdfd;
+  border-radius: 50%;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  background: linear-gradient(to bottom, #fdfdfd 0%, #d1d1d1 100%);
+}
+
+/* Smoke Animation */
+.smoke-container {
+  position: absolute;
+  top: -50px;
+  left: 25px;
+  display: flex;
+  gap: 20px;
+}
+
+.smoke {
+  width: 4px;
+  height: 35px;
+  background: rgba(255, 255, 255, 0.6);
+  filter: blur(6px);
+  border-radius: 50%;
+  animation: smokeRisePremium 2.5s infinite ease-out;
+}
+
+.s1 { animation-delay: 0s; }
+.s2 { animation-delay: 0.5s; }
+.s3 { animation-delay: 1s; }
+
+@keyframes smokeRisePremium {
   0% {
-    transform: translate(-55%);
-  }
-  100% {
-    transform: translate(55%);
-  }
-}
-
-@keyframes opacity-animation {
-  0%,
-  100% {
+    transform: translateY(0) translateX(0) scaleX(1) scaleY(1);
     opacity: 0;
   }
   15% {
-    opacity: 1;
+    opacity: 0.7;
   }
-  65% {
-    opacity: 0;
-  }
-}
-
-.loader-letter {
-  display: inline-block;
-  opacity: 0;
-  animation: loader-letter-anim 4s infinite linear;
-  z-index: 2;
-}
-
-.loader-letter:nth-child(1) {
-  animation-delay: 0.1s;
-}
-.loader-letter:nth-child(2) {
-  animation-delay: 0.205s;
-}
-.loader-letter:nth-child(3) {
-  animation-delay: 0.31s;
-}
-.loader-letter:nth-child(4) {
-  animation-delay: 0.415s;
-}
-.loader-letter:nth-child(5) {
-  animation-delay: 0.521s;
-}
-.loader-letter:nth-child(6) {
-  animation-delay: 0.626s;
-}
-.loader-letter:nth-child(7) {
-  animation-delay: 0.731s;
-}
-.loader-letter:nth-child(8) {
-  animation-delay: 0.837s;
-}
-.loader-letter:nth-child(9) {
-  animation-delay: 0.942s;
-}
-.loader-letter:nth-child(10) {
-  animation-delay: 1.047s;
-}
-
-@keyframes loader-letter-anim {
-  0% {
-    opacity: 0;
-  }
-  5% {
-    opacity: 1;
-    text-shadow: 0 0 4px #fff;
-    transform: scale(1.1) translateY(-2px);
-  }
-  20% {
-    opacity: 0.2;
+  50% {
+    transform: translateY(-40px) translateX(10px) scaleX(2) scaleY(1.5);
+    opacity: 0.4;
   }
   100% {
+    transform: translateY(-80px) translateX(-5px) scaleX(3) scaleY(2);
     opacity: 0;
   }
 }
+
+/* Text & Progress Bar */
+.loader-text {
+  text-align: center;
+  animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.brand-name {
+  font-family: 'Cinzel', serif;
+  font-size: 3rem;
+  background: linear-gradient(to bottom, #d4a373, #a67c52);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 8px;
+  font-weight: 800;
+  display: block;
+  margin-bottom: 25px;
+  filter: drop-shadow(0 4px 15px rgba(0,0,0,0.5));
+  text-transform: uppercase;
+}
+
+.loading-bar {
+  width: 480px;
+  max-width: 90vw;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+  margin: 0 auto;
+}
+
+.progress {
+  position: absolute;
+  top: 0;
+  left: -30%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    #d4a373 50%, 
+    transparent 100%
+  );
+  box-shadow: 0 0 15px rgba(212, 163, 115, 0.5);
+  animation: loadingPulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes loadingPulse {
+  0% { left: -30%; }
+  100% { left: 100%; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pulse effect for the container */
+.loader-container {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+

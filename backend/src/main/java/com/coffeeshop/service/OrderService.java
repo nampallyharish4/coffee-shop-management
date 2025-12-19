@@ -91,8 +91,19 @@ public class OrderService {
         order.setCouponCode(dto.getCouponCode());
         
         BigDecimal taxableAmount = subtotal.subtract(order.getDiscount());
-        order.setTax(taxableAmount.multiply(TAX_RATE));
-        order.setTotal(taxableAmount.add(order.getTax()));
+        order.setTax(taxableAmount.multiply(TAX_RATE).setScale(2, java.math.RoundingMode.HALF_UP));
+        
+        BigDecimal rawTotal = taxableAmount.add(order.getTax());
+        
+        if (dto.getRoundOff() != null) {
+            order.setRoundOff(dto.getRoundOff());
+            order.setTotal(rawTotal.add(dto.getRoundOff()));
+        } else {
+            // Default to nearest integer rounding to match frontend logic
+            BigDecimal roundedTotal = rawTotal.setScale(0, java.math.RoundingMode.HALF_UP).setScale(2);
+            order.setRoundOff(roundedTotal.subtract(rawTotal));
+            order.setTotal(roundedTotal);
+        }
 
         if (dto.getPayment() != null) {
             Payment payment = new Payment();
@@ -258,6 +269,7 @@ public class OrderService {
         dto.setDiscount(order.getDiscount());
         dto.setTax(order.getTax());
         dto.setTotal(order.getTotal());
+        dto.setRoundOff(order.getRoundOff());
         dto.setCouponCode(order.getCouponCode());
         dto.setCancellationReason(order.getCancellationReason());
         dto.setCreatedAt(order.getCreatedAt());

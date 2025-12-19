@@ -20,7 +20,6 @@ import java.util.Map;
 @RequestMapping("/api/orders")
 @Tag(name = "Order Management", description = "Order management endpoints")
 @SecurityRequirement(name = "Bearer Authentication")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class OrderController {
     @Autowired
     private OrderService orderService;

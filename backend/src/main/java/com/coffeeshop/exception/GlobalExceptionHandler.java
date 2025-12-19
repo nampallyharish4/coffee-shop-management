@@ -41,7 +41,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGlobalException(Exception ex) {
+        // Log the actual message for internal debugging, but return a generic one to the user
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(false, "An error occurred: " + ex.getMessage()));
+                .body(new ApiResponse(false, "An unexpected error occurred. Please contact support."));
     }
 }

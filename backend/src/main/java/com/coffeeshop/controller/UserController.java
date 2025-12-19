@@ -19,7 +19,6 @@ import java.util.List;
 @RequestMapping("/api/users")
 @Tag(name = "User Management", description = "User management endpoints")
 @SecurityRequirement(name = "Bearer Authentication")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class UserController {
     @Autowired
     private UserService userService;

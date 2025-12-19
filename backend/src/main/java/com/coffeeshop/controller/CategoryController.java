@@ -16,7 +16,6 @@ import java.util.List;
 @RequestMapping("/api/categories")
 @Tag(name = "Categories", description = "Category endpoints")
 @SecurityRequirement(name = "Bearer Authentication")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class CategoryController {
     @Autowired
     private CategoryRepository categoryRepository;

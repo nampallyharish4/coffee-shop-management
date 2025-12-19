@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Grid, Paper, Typography, Select, MenuItem, FormControl, InputLabel, Box,
   Table, TableBody, TableCell, TableHead, TableRow, Button, Dialog, DialogTitle, 
-  DialogContent, DialogActions, TextField, Alert
+  DialogContent, DialogActions, TextField, Alert, Stack
 } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
@@ -97,30 +97,40 @@ const Analytics = () => {
         </Alert>
       )}
 
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <FormControl sx={{ minWidth: 200 }}>
+      <Box sx={{ 
+        mb: 3, 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' }, 
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'stretch', sm: 'center' },
+        gap: 2 
+      }}>
+        <FormControl sx={{ minWidth: { xs: '100%', sm: 200 } }} size="small">
           <InputLabel>Time Range</InputLabel>
-          <Select value={range} onChange={(e) => setRange(e.target.value)}>
+          <Select value={range} label="Time Range" onChange={(e) => setRange(e.target.value)}>
             <MenuItem value="daily">Daily</MenuItem>
             <MenuItem value="weekly">Weekly</MenuItem>
             <MenuItem value="monthly">Monthly</MenuItem>
           </Select>
         </FormControl>
-        <Button 
-          variant="contained" 
-          color="warning" 
-          onClick={() => openConfirmation('RESET_REVENUE')}
-          sx={{ mr: 2 }}
-        >
-          Reset Revenue
-        </Button>
-        <Button 
-          variant="contained" 
-          color="error" 
-          onClick={() => openConfirmation('CLEAR_HISTORY')}
-        >
-          Clear History
-        </Button>
+        <Stack direction="row" spacing={2} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <Button 
+            variant="contained" 
+            color="warning" 
+            onClick={() => openConfirmation('RESET_REVENUE')}
+            fullWidth
+          >
+            Reset Revenue
+          </Button>
+          <Button 
+            variant="contained" 
+            color="error" 
+            onClick={() => openConfirmation('CLEAR_HISTORY')}
+            fullWidth
+          >
+            Clear History
+          </Button>
+        </Stack>
       </Box>
 
       <Grid container spacing={3}>
@@ -160,26 +170,28 @@ const Analytics = () => {
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ p: 3, height: '100%' }}>
             <Typography variant="h6" gutterBottom>Staff Performance</Typography>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Staff Name</TableCell>
-                  <TableCell align="right">Orders</TableCell>
-                  <TableCell align="right">Revenue</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {staffPerformance.map((staff, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell>{staff.userName}</TableCell>
-                    <TableCell align="right">{staff.orderCount}</TableCell>
-                    <TableCell align="right">₹{staff.totalRevenue || 0}</TableCell>
+            <Box sx={{ overflowX: 'auto' }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ minWidth: 150 }}>Staff Name</TableCell>
+                    <TableCell align="right" sx={{ minWidth: 100 }}>Orders</TableCell>
+                    <TableCell align="right" sx={{ minWidth: 120 }}>Revenue</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {staffPerformance.map((staff, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>{staff.userName}</TableCell>
+                      <TableCell align="right">{staff.orderCount}</TableCell>
+                      <TableCell align="right">₹{staff.totalRevenue || 0}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
           </Paper>
         </Grid>
       </Grid>

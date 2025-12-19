@@ -3,11 +3,54 @@ import { useAuth } from '../context/AuthContext';
 import {
   Paper, Table, TableBody, TableCell, TableHead, TableRow, Chip, Box,
   Typography, Tabs, Tab, IconButton, Collapse, Button, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField, Snackbar, Alert
+  DialogContent, DialogActions, TextField, Snackbar, Alert, GlobalStyles,
+  useTheme, useMediaQuery
 } from '@mui/material';
 import { KeyboardArrowDown, KeyboardArrowUp, Receipt, Print, Cancel } from '@mui/icons-material';
 import Layout from '../components/Layout';
 import { orderService } from '../services/api';
+
+const PrintStyles = () => (
+  <GlobalStyles styles={{
+    '@media print': {
+      'body *': {
+        visibility: 'hidden',
+      },
+      '.MuiDialog-root, .MuiDialog-root *': {
+        visibility: 'visible',
+      },
+      '.MuiDialog-root': {
+        position: 'fixed !important',
+        left: '0 !important',
+        top: '0 !important',
+        width: '100% !important',
+        height: '100% !important',
+        margin: '0 !important',
+        padding: '0 !important',
+        zIndex: '9999 !important',
+      },
+      '.MuiBackdrop-root': {
+        display: 'none !important',
+      },
+      '.MuiDialog-container': {
+        height: 'auto !important',
+      },
+      '.MuiPaper-root': {
+        boxShadow: 'none !important',
+        border: 'none !important',
+        width: '100% !important',
+        maxWidth: 'none !important',
+        margin: '0 !important',
+      },
+      '.MuiDialogActions-root, .MuiDialogTitle-root button, header, nav, aside': {
+        display: 'none !important',
+      },
+      '.MuiDialogContent-root': {
+        padding: '0 !important',
+      }
+    }
+  }} />
+);
 
 const Orders = () => {
   const { hasRole } = useAuth();
@@ -249,7 +292,8 @@ const Orders = () => {
 
   return (
     <Layout title="Orders">
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <PrintStyles />
+      <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2 }}>
         <Box>
           <Typography variant="h5" fontWeight="bold" gutterBottom>
             Placed Orders
@@ -268,32 +312,39 @@ const Orders = () => {
             InputLabelProps={{
               shrink: true,
             }}
-            sx={{ width: 220 }}
+            sx={{ width: { xs: '100%', sm: 220 } }}
           />
         </Box>
       </Box>
 
-      <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 2 }}>
+      <Tabs 
+        value={tab} 
+        onChange={(e, v) => setTab(v)} 
+        sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+        variant="scrollable"
+        scrollButtons="auto"
+      >
         {!isRestrictedView && <Tab label={`All Orders (${getFilteredCount(null)})`} value={0} />}
         <Tab label={`Active (${getFilteredCount(['CREATED', 'IN_PREPARATION', 'READY'])})`} value={1} />
         <Tab label={`Completed (${getFilteredCount(['COMPLETED'])})`} value={2} />
         {!isRestrictedView && <Tab label={`Cancelled (${getFilteredCount(['CANCELLED'])})`} value={3} />}
       </Tabs>
 
-      <Paper>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Order ID</TableCell>
-              <TableCell>Cashier</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Items</TableCell>
-              <TableCell>Total</TableCell>
-              <TableCell>Payment</TableCell>
-              <TableCell>Date & Time</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
+      <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: '12px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+        <Box sx={{ overflowX: 'auto' }}>
+          <Table stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ minWidth: 100 }}>Order ID</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>Cashier</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>Status</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>Items</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>Total</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>Payment</TableCell>
+                <TableCell sx={{ minWidth: 180 }}>Date & Time</TableCell>
+                <TableCell sx={{ minWidth: 200 }}>Actions</TableCell>
+              </TableRow>
+            </TableHead>
           <TableBody>
             {displayOrders.length === 0 ? (
               <TableRow>
@@ -437,7 +488,111 @@ const Orders = () => {
             )}
           </TableBody>
         </Table>
-      </Paper>
+      </Box>
+    </Paper>
+    
+    {/* Printer-friendly Receipt (Hidden from screen) */}
+    <Box sx={{ display: 'none', displayPrint: 'block' }}>
+      {selectedOrder && (
+        <div id="thermal-receipt" className="print-receipt">
+          <style>
+            {`
+              @media print {
+                body * { visibility: hidden; }
+                #thermal-receipt, #thermal-receipt * { visibility: visible; }
+                #thermal-receipt { 
+                  position: absolute; 
+                  left: 0; 
+                  top: 0; 
+                  width: 100%;
+                  padding: 10px;
+                  color: #000 !important;
+                  background: #fff !important;
+                }
+                .receipt-content {
+                  max-width: 80mm;
+                  margin: 0 auto;
+                  font-family: 'Courier New', Courier, monospace;
+                }
+                .receipt-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 15px; }
+                .receipt-brand { font-size: 22px; font-weight: bold; margin: 0; }
+                .receipt-item { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; }
+                .receipt-totals { border-top: 1px dashed #000; padding-top: 10px; margin-top: 15px; }
+                .total-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+                .grand-total { font-size: 18px; font-weight: bold; border-top: 1px solid #000; margin-top: 5px; padding-top: 5px; }
+                .receipt-footer { text-align: center; margin-top: 20px; font-size: 12px; }
+              }
+            `}
+          </style>
+          <div className="receipt-content">
+            <div className="receipt-header">
+              <h1 className="receipt-brand">CLOUD CAFE</h1>
+              <p>Management System</p>
+              <p>-------------------------</p>
+              <p>Order ID: {selectedOrder.id}</p>
+              <p>Date: {formatDate(selectedOrder.createdAt)}</p>
+              <p>Cashier: {selectedOrder.cashierName || 'N/A'}</p>
+            </div>
+            
+            <div className="receipt-items">
+              {selectedOrder.items?.map((item, idx) => (
+                <div key={idx} className="receipt-item">
+                  <div style={{ flex: 1 }}>
+                    <div>{item.menuItemName}</div>
+                    <small>{item.quantity} x ₹{Number(item.price || 0).toFixed(2)}</small>
+                  </div>
+                  <div style={{ fontWeight: 'bold' }}>₹{Number(item.subtotal || 0).toFixed(2)}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="receipt-totals">
+              <div className="total-row">
+                <span>Subtotal:</span>
+                <span>₹{Number(selectedOrder.subtotal || 0).toFixed(2)}</span>
+              </div>
+              {selectedOrder.discount > 0 && (
+                <div className="total-row">
+                  <span>Discount:</span>
+                  <span>-₹{Number(selectedOrder.discount || 0).toFixed(2)}</span>
+                </div>
+              )}
+              <div className="total-row">
+                <span>Tax (5%):</span>
+                <span>₹{Number(selectedOrder.tax || 0).toFixed(2)}</span>
+              </div>
+              {(() => {
+                const subtotal = Number(selectedOrder.subtotal || 0);
+                const discount = Number(selectedOrder.discount || 0);
+                const tax = Number(selectedOrder.tax || 0);
+                const total = Number(selectedOrder.total || 0);
+                const roundOff = total - (subtotal - discount + tax);
+                if (Math.abs(roundOff) > 0.001) {
+                  return (
+                    <div className="total-row">
+                      <span>Round Off:</span>
+                      <span>{roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}</span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              <div className="total-row grand-total">
+                <span>TOTAL AMOUNT:</span>
+                <span>₹{Number(selectedOrder.total || 0).toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="receipt-footer">
+              <p>***************************</p>
+              <p>Thank you for choosing Cloud Cafe!</p>
+              <p>Payment: {selectedOrder.payment?.method || 'N/A'}</p>
+              <p>***************************</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </Box>
 
       {/* Receipt Dialog */}
       <Dialog 
@@ -463,7 +618,19 @@ const Orders = () => {
           {selectedOrder && (
             <Box>
               <Box sx={{ mb: 2, textAlign: 'center' }}>
-                <Typography variant="h6" fontWeight="bold">Coffee Shop</Typography>
+                <Typography 
+                  variant="h5" 
+                  sx={{ 
+                    fontFamily: '"Cinzel", serif', 
+                    fontWeight: 800, 
+                    color: 'primary.main',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    mb: 0.5
+                  }}
+                >
+                  Cloud Cafe
+                </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Order #{selectedOrder.id}
                 </Typography>
@@ -503,12 +670,33 @@ const Orders = () => {
                   <Typography variant="body2">Tax (5%):</Typography>
                   <Typography variant="body2">₹{Number(selectedOrder.tax || 0).toFixed(2)}</Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1, borderTop: 1, borderColor: 'divider' }}>
-                  <Typography variant="h6" fontWeight="bold">Total:</Typography>
-                  <Typography variant="h6" fontWeight="bold" color="primary">
+                {(() => {
+                  const subtotal = Number(selectedOrder.subtotal || 0);
+                  const discount = Number(selectedOrder.discount || 0);
+                  const tax = Number(selectedOrder.tax || 0);
+                  const total = Number(selectedOrder.total || 0);
+                  const roundOff = total - (subtotal - discount + tax);
+                  if (Math.abs(roundOff) > 0.001) {
+                    return (
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="body2">Round Off:</Typography>
+                        <Typography variant="body2">
+                          {roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}
+                        </Typography>
+                      </Box>
+                    );
+                  }
+                  return null;
+                })()}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1, borderTop: 2, borderStyle: 'dashed', borderColor: 'divider', mt: 1 }}>
+                  <Typography variant="h6" fontWeight="bold">Final Amount:</Typography>
+                  <Typography variant="h6" fontWeight="900" color="primary">
                     ₹{Number(selectedOrder.total || 0).toFixed(2)}
                   </Typography>
                 </Box>
+                <Typography variant="caption" align="right" display="block" color="text.secondary" sx={{ mt: 0.5, fontStyle: 'italic' }}>
+                  (Rounded to nearest Rupee)
+                </Typography>
               </Box>
 
               <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 2 }}>

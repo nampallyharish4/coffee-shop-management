@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import ThemeSwitcher from './ThemeSwitcher';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  AppBar, Toolbar, Typography, IconButton, Drawer, List, ListItem,
+  AppBar, Toolbar, Typography, IconButton, Drawer, List,
   ListItemIcon, ListItemText, Box, Container, Divider, useTheme, useMediaQuery,
   Avatar, Tooltip, ListItemButton, Dialog, DialogTitle, DialogContent, 
   DialogContentText, DialogActions, Button
 } from '@mui/material';
 import {
   Menu as MenuIcon, Dashboard as DashboardIcon, ShoppingCart,
-  Restaurant, Inventory, People, Analytics, Logout, Receipt, ArrowBack
+  Restaurant, Inventory, People, Analytics, Logout, Receipt, ArrowBack, ChevronLeft
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
@@ -23,9 +23,10 @@ const Layout = ({ children, title, headerContent }) => {
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', roles: [] },
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', roles: ['ROLE_ADMIN', 'ROLE_BARISTA'] },
     { text: 'POS', icon: <ShoppingCart />, path: '/pos', roles: ['ROLE_CASHIER', 'ROLE_ADMIN'] },
     { text: 'Orders', icon: <Receipt />, path: '/orders', roles: ['ROLE_CASHIER', 'ROLE_BARISTA', 'ROLE_ADMIN'] },
     { text: 'Barista View', icon: <Restaurant />, path: '/barista', roles: ['ROLE_BARISTA', 'ROLE_ADMIN'] },
@@ -36,7 +37,11 @@ const Layout = ({ children, title, headerContent }) => {
   ];
 
   const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+    if (isMobile) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setIsSidebarOpen(!isSidebarOpen);
+    }
   };
 
   const handleLogoutClick = () => {
@@ -80,12 +85,17 @@ const Layout = ({ children, title, headerContent }) => {
         </Avatar>
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="subtitle1" fontWeight="800" noWrap sx={{ color: 'primary.main' }}>
-            {user?.name || 'Coffee Admin'}
+            {user?.name || 'Cloud Admin'}
           </Typography>
           <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ display: 'block', textTransform: 'uppercase', letterSpacing: 1 }}>
             {user?.roles?.[0]?.replace('ROLE_', '') || 'User'}
           </Typography>
         </Box>
+        {!isMobile && (
+          <IconButton onClick={() => setIsSidebarOpen(false)} sx={{ color: 'primary.main', ml: 'auto' }}>
+             <ChevronLeft />
+          </IconButton>
+        )}
       </Box>
       
       <Divider sx={{ opacity: 0.6 }} />
@@ -146,8 +156,8 @@ const Layout = ({ children, title, headerContent }) => {
       <AppBar
         position="fixed"
         sx={{
-          width: { md: hasRole('ROLE_ADMIN') ? '100%' : `calc(100% - ${drawerWidth}px)` },
-          ml: { md: hasRole('ROLE_ADMIN') ? 0 : `${drawerWidth}px` },
+          width: { md: (hasRole('ROLE_ADMIN') || !isSidebarOpen) ? '100%' : `calc(100% - ${drawerWidth}px)` },
+          ml: { md: (hasRole('ROLE_ADMIN') || !isSidebarOpen) ? 0 : `${drawerWidth}px` },
           bgcolor: 'background.paper',
           color: 'text.primary',
           boxShadow: 'none',
@@ -167,13 +177,22 @@ const Layout = ({ children, title, headerContent }) => {
                 aria-label="open drawer"
                 edge="start"
                 onClick={handleDrawerToggle}
-                sx={{ mr: 2, display: { md: 'none' } }}
+                sx={{ mr: 2, display: { md: (hasRole('ROLE_ADMIN') || !isSidebarOpen) ? 'block' : 'none' } }}
               >
                 <MenuIcon />
               </IconButton>
             )}
-            <Typography variant="h6" fontWeight="800" sx={{ color: 'primary.main', letterSpacing: 0.5 }}>
-              {title || 'Coffee Shop'}
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontFamily: '"Cinzel", serif', 
+                fontWeight: 800, 
+                color: 'primary.main', 
+                letterSpacing: 1,
+                textTransform: 'uppercase'
+              }}
+            >
+              {title || 'Cloud Cafe'}
             </Typography>
           </Box>
           
@@ -231,7 +250,7 @@ const Layout = ({ children, title, headerContent }) => {
 
       <Box
         component="nav"
-        sx={{ width: { md: (hasRole('ROLE_ADMIN') ? 0 : drawerWidth) }, flexShrink: { md: (hasRole('ROLE_ADMIN') ? 0 : 1) } }}
+        sx={{ width: { md: (hasRole('ROLE_ADMIN') || !isSidebarOpen) ? 0 : drawerWidth }, flexShrink: { md: (hasRole('ROLE_ADMIN') || !isSidebarOpen) ? 0 : 1 } }}
       >
         <Drawer
           variant="temporary"
@@ -252,7 +271,7 @@ const Layout = ({ children, title, headerContent }) => {
         </Drawer>
         {!hasRole('ROLE_ADMIN') && (
           <Drawer
-            variant="permanent"
+            variant="persistent"
             sx={{
               display: { xs: 'none', md: 'block' },
               '& .MuiDrawer-paper': { 
@@ -263,7 +282,7 @@ const Layout = ({ children, title, headerContent }) => {
                 backgroundColor: 'background.paper'
               },
             }}
-            open
+            open={isSidebarOpen}
           >
             {drawer}
           </Drawer>
@@ -276,7 +295,7 @@ const Layout = ({ children, title, headerContent }) => {
         sx={{
           flexGrow: 1,
           p: { xs: 2, sm: 3, md: 4 },
-          width: { md: hasRole('ROLE_ADMIN') ? '100%' : `calc(100% - ${drawerWidth}px)` },
+          width: { md: (hasRole('ROLE_ADMIN') || !isSidebarOpen) ? '100%' : `calc(100% - ${drawerWidth}px)` },
           mt: '70px',
           minHeight: 'calc(100vh - 70px)',
           transition: 'all 0.3s'

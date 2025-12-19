@@ -26,13 +26,25 @@ const Login = () => {
 
   return (
     <Container maxWidth="sm">
-      <Box sx={{ mt: 8 }}>
+      <Box sx={{ mt: { xs: 4, sm: 8 }, mb: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" align="center" gutterBottom>
-            Coffee Shop Management
+          <Typography 
+            variant="h4" 
+            align="center" 
+            gutterBottom
+            sx={{ 
+              fontFamily: '"Cinzel", serif', 
+              fontWeight: 800, 
+              color: 'primary.main',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              mb: 1
+            }}
+          >
+            Cloud Cafe
           </Typography>
-          <Typography variant="h6" align="center" color="textSecondary" gutterBottom>
-            Login
+          <Typography variant="h6" align="center" color="textSecondary" sx={{ mb: 4, fontWeight: 500 }}>
+            Management Portal
           </Typography>
 
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -67,23 +79,7 @@ const Login = () => {
             </Button>
           </form>
 
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="caption" display="block" gutterBottom>
-              Default Credentials:
-            </Typography>
-            <Typography variant="caption" display="block">
-              Admin: admin@coffeeshop.com / Admin@123
-            </Typography>
-            <Typography variant="caption" display="block">
-              Cashier: cashier@coffeeshop.com / Cashier@123
-            </Typography>
-            <Typography variant="caption" display="block">
-              Barista: barista@coffeeshop.com / Barista@123
-            </Typography>
-            <Typography variant="caption" display="block">
-              Inventory: inventory@coffeeshop.com / Inventory@123
-            </Typography>
-          </Box>
+
         </Paper>
       </Box>
     </Container>

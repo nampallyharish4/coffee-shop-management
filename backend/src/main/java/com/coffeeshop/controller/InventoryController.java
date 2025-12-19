@@ -19,7 +19,6 @@ import java.util.List;
 @RequestMapping("/api/inventory")
 @Tag(name = "Inventory Management", description = "Inventory management endpoints")
 @SecurityRequirement(name = "Bearer Authentication")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class InventoryController {
     @Autowired
     private InventoryService inventoryService;

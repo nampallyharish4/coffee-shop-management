@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import {
   ShoppingCart, Restaurant, Inventory, People, Menu as MenuIcon, Receipt,
-  TrendingUp, Assessment, Group, Speed, History, DeleteForever, Refresh
+  TrendingUp, Assessment, Group, Speed, DeleteForever, Refresh
 } from '@mui/icons-material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
@@ -149,8 +149,8 @@ const Dashboard = () => {
               <Typography variant="body2" color="text.secondary">Real-time performance metrics</Typography>
             </Box>
             
-            <Stack direction="row" spacing={2}>
-              <FormControl size="small" sx={{ minWidth: 150 }}>
+            <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2} sx={{ width: { xs: '100%', lg: 'auto' } }}>
+              <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 150 } }}>
                 <InputLabel>Time Range</InputLabel>
                 <Select value={range} label="Time Range" onChange={(e) => setRange(e.target.value)} sx={{ borderRadius: '12px' }}>
                   <MenuItem value="daily">Daily</MenuItem>
@@ -158,24 +158,26 @@ const Dashboard = () => {
                   <MenuItem value="monthly">Monthly</MenuItem>
                 </Select>
               </FormControl>
-              <Button 
-                variant="outlined" 
-                color="warning" 
-                startIcon={<Refresh />}
-                onClick={() => openConfirmation('RESET_REVENUE')}
-                sx={{ borderRadius: '12px', textTransform: 'none' }}
-              >
-                Reset
-              </Button>
-              <Button 
-                variant="outlined" 
-                color="error" 
-                startIcon={<DeleteForever />}
-                onClick={() => openConfirmation('CLEAR_HISTORY')}
-                sx={{ borderRadius: '12px', textTransform: 'none' }}
-              >
-                Clear
-              </Button>
+              <Stack direction="row" spacing={2}>
+                <Button 
+                  variant="outlined" 
+                  color="warning" 
+                  startIcon={<Refresh />}
+                  onClick={() => openConfirmation('RESET_REVENUE')}
+                  sx={{ borderRadius: '12px', textTransform: 'none', flexGrow: 1 }}
+                >
+                  Reset
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  color="error" 
+                  startIcon={<DeleteForever />}
+                  onClick={() => openConfirmation('CLEAR_HISTORY')}
+                  sx={{ borderRadius: '12px', textTransform: 'none', flexGrow: 1 }}
+                >
+                  Clear
+                </Button>
+              </Stack>
             </Stack>
           </Stack>
 
@@ -242,37 +244,39 @@ const Dashboard = () => {
                   <Typography variant="h6" fontWeight="800">Staff Performance</Typography>
                   <Group sx={{ color: 'text.secondary' }} />
                 </Stack>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow sx={{ '& th': { border: 'none', color: 'text.secondary', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase' } }}>
-                      <TableCell>Staff Member</TableCell>
-                      <TableCell align="right">Orders</TableCell>
-                      <TableCell align="right">Revenue</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {staffPerformance.map((staff, idx) => (
-                      <TableRow key={idx} sx={{ '& td': { borderBottom: '1px solid', borderColor: 'divider', py: 1.5 } }}>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="700">{staff.userName}</Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body2" fontWeight="600">{staff.orderCount}</Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body2" fontWeight="800" color="primary">₹{staff.totalRevenue?.toLocaleString() || 0}</Typography>
-                        </TableCell>
+                <Box sx={{ overflowX: 'auto' }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ '& th': { border: 'none', color: 'text.secondary', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase' } }}>
+                        <TableCell sx={{ minWidth: 120 }}>Staff Member</TableCell>
+                        <TableCell align="right" sx={{ minWidth: 80 }}>Orders</TableCell>
+                        <TableCell align="right" sx={{ minWidth: 100 }}>Revenue</TableCell>
                       </TableRow>
-                    ))}
-                    {staffPerformance.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
-                          <Typography variant="body2" color="text.secondary">No data available for this range</Typography>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHead>
+                    <TableBody>
+                      {staffPerformance.map((staff, idx) => (
+                        <TableRow key={idx} sx={{ '& td': { borderBottom: '1px solid', borderColor: 'divider', py: 1.5 } }}>
+                          <TableCell>
+                            <Typography variant="body2" fontWeight="700">{staff.userName}</Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            <Typography variant="body2" fontWeight="600">{staff.orderCount}</Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            <Typography variant="body2" fontWeight="800" color="primary">₹{staff.totalRevenue?.toLocaleString() || 0}</Typography>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {staffPerformance.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                            <Typography variant="body2" color="text.secondary">No data available for this range</Typography>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </Box>
               </Paper>
             </Grid>
 
