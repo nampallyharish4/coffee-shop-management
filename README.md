@@ -105,7 +105,7 @@ COFFEE-SHOP/
 ## 📖 API Documentation
 
 Once the backend is running, you can explore the REST API via Swagger UI:
-*   URL: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
+
 
 
 ## 🛡️ License
