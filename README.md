@@ -32,8 +32,35 @@ A full-stack web application designed to streamline coffee shop operations. This
 *   [Node.js & npm](https://nodejs.org/)
 *   [MySQL Server](https://dev.mysql.com/downloads/mysql/)
 *   [Maven](https://maven.apache.org/) (Optional, wrapper included)
+*   [Docker](https://www.docker.com/) (Optional, for containerized deployment)
 
 ## 📥 Installation & Setup
+
+### 🚀 Quick Start with Docker (Recommended)
+
+The easiest way to deploy the application is using Docker Compose:
+
+```bash
+# Clone the repository
+git clone https://github.com/nampallyharish4/coffee-shop-management.git
+cd coffee-shop-management
+
+# Start all services (database, backend, frontend)
+docker-compose up -d --build
+
+# Access the application
+# Frontend: http://localhost:80
+# Backend: http://localhost:8081
+# Swagger: http://localhost:8081/swagger-ui.html
+```
+
+**📖 For detailed deployment instructions, see:**
+- [QUICKSTART.md](QUICKSTART.md) - Get started in minutes
+- [DEPLOYMENT.md](DEPLOYMENT.md) - Comprehensive deployment guide with Docker, manual setup, and production deployment
+
+### ⚙️ Manual Setup
+
+If you prefer to run services without Docker:
 
 ### 1. Database Setup
 1.  Open your MySQL Client (Workbench or Command Line).
