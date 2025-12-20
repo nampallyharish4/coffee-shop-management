@@ -4,6 +4,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableRow, Button, Dialog, DialogTitle, 
   DialogContent, DialogActions, TextField, Alert, Stack
 } from '@mui/material';
+import { Payments, ReceiptLong, QueryStats } from '@mui/icons-material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
 import { analyticsService, orderService } from '../services/api';
@@ -135,21 +136,36 @@ const Analytics = () => {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>Total Revenue</Typography>
-            <Typography variant="h4">₹{salesSummary?.totalRevenue || 0}</Typography>
+          <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+              <Box sx={{ p: 1, borderRadius: '10px', bgcolor: 'primary.light', color: 'primary.main', display: 'flex' }}>
+                <Payments />
+              </Box>
+              <Typography variant="subtitle2" color="text.secondary" fontWeight="700">TOTAL REVENUE</Typography>
+            </Stack>
+            <Typography variant="h4" fontWeight="900">₹{salesSummary?.totalRevenue?.toLocaleString() || 0}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>Total Orders</Typography>
-            <Typography variant="h4">{salesSummary?.orderCount || 0}</Typography>
+          <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+              <Box sx={{ p: 1, borderRadius: '10px', bgcolor: 'secondary.light', color: 'secondary.main', display: 'flex' }}>
+                <ReceiptLong />
+              </Box>
+              <Typography variant="subtitle2" color="text.secondary" fontWeight="700">TOTAL ORDERS</Typography>
+            </Stack>
+            <Typography variant="h4" fontWeight="900">{salesSummary?.orderCount || 0}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>Avg Order Value</Typography>
-            <Typography variant="h4">₹{salesSummary?.averageOrderValue || 0}</Typography>
+          <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+              <Box sx={{ p: 1, borderRadius: '10px', bgcolor: 'success.light', color: 'success.main', display: 'flex' }}>
+                <QueryStats />
+              </Box>
+              <Typography variant="subtitle2" color="text.secondary" fontWeight="700">AVG ORDER VALUE</Typography>
+            </Stack>
+            <Typography variant="h4" fontWeight="900">₹{salesSummary?.averageOrderValue?.toLocaleString() || 0}</Typography>
           </Paper>
         </Grid>
 

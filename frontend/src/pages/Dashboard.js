@@ -9,7 +9,8 @@ import {
 } from '@mui/material';
 import {
   ShoppingCart, Restaurant, Inventory, People, Menu as MenuIcon, Receipt,
-  TrendingUp, Assessment, Group, Speed, DeleteForever, Refresh
+  Group, DeleteForever, Refresh,
+  Payments, ReceiptLong, QueryStats
 } from '@mui/icons-material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
@@ -192,7 +193,7 @@ const Dashboard = () => {
             <Grid item xs={12} md={4}>
               <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
                 <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-                  <Box sx={{ p: 1, borderRadius: '10px', bgcolor: 'primary.light', color: 'primary.main' }}><TrendingUp /></Box>
+                  <Box sx={{ p: 1, borderRadius: '10px', bgcolor: 'primary.light', color: 'primary.main' }}><Payments /></Box>
                   <Typography variant="subtitle2" color="text.secondary" fontWeight="700">TOTAL REVENUE</Typography>
                 </Stack>
                 <Typography variant="h4" fontWeight="900">₹{salesSummary?.totalRevenue?.toLocaleString() || 0}</Typography>
@@ -201,7 +202,7 @@ const Dashboard = () => {
             <Grid item xs={12} md={4}>
               <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
                 <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-                  <Box sx={{ p: 1, borderRadius: '10px', bgcolor: 'secondary.light', color: 'secondary.main' }}><Assessment /></Box>
+                  <Box sx={{ p: 1, borderRadius: '10px', bgcolor: 'secondary.light', color: 'secondary.main' }}><ReceiptLong /></Box>
                   <Typography variant="subtitle2" color="text.secondary" fontWeight="700">TOTAL ORDERS</Typography>
                 </Stack>
                 <Typography variant="h4" fontWeight="900">{salesSummary?.orderCount || 0}</Typography>
@@ -210,7 +211,7 @@ const Dashboard = () => {
             <Grid item xs={12} md={4}>
               <Paper sx={{ p: 3, borderRadius: '20px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
                 <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-                  <Box sx={{ p: 1, borderRadius: '10px', bgcolor: 'success.light', color: 'success.main' }}><Speed /></Box>
+                  <Box sx={{ p: 1, borderRadius: '10px', bgcolor: 'success.light', color: 'success.main' }}><QueryStats /></Box>
                   <Typography variant="subtitle2" color="text.secondary" fontWeight="700">AVG ORDER VALUE</Typography>
                 </Stack>
                 <Typography variant="h4" fontWeight="900">₹{salesSummary?.averageOrderValue?.toLocaleString() || 0}</Typography>
