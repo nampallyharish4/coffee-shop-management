@@ -85,12 +85,12 @@ start_app.bat
 
 Explore the system using these pre-configured accounts:
 
-| Role | Email | Password |
-| :--- | :--- | :--- |
-| **Admin** | `admin@coffeeshop.com` | 
-| **Cashier** | `cashier@coffeeshop.com` | 
-| **Barista** | `barista@coffeeshop.com` | 
-| **Inventory** | `inventory@coffeeshop.com` | 
+| Role | Email |
+| :--- | :--- |
+| **Admin** | `admin@coffeeshop.com` |
+| **Cashier** | `cashier@coffeeshop.com` |
+| **Barista** | `barista@coffeeshop.com` |
+| **Inventory** | `inventory@coffeeshop.com` |
 
 ---
 
