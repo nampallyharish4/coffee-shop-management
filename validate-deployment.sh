@@ -78,12 +78,19 @@ else
 fi
 
 # Validate Dockerfile syntax (basic check)
-echo "6. Validating Dockerfile syntax..."
-if docker build -f backend/Dockerfile --help > /dev/null 2>&1; then
-    echo -e "${GREEN}✓ Backend Dockerfile syntax is valid${NC}"
+echo "6. Checking Dockerfile files exist and are readable..."
+if [ -r "backend/Dockerfile" ]; then
+    echo -e "${GREEN}✓ Backend Dockerfile exists and is readable${NC}"
+else
+    echo -e "${RED}✗ Backend Dockerfile not found or not readable${NC}"
+    exit 1
 fi
-if docker build -f frontend/Dockerfile --help > /dev/null 2>&1; then
-    echo -e "${GREEN}✓ Frontend Dockerfile syntax is valid${NC}"
+
+if [ -r "frontend/Dockerfile" ]; then
+    echo -e "${GREEN}✓ Frontend Dockerfile exists and is readable${NC}"
+else
+    echo -e "${RED}✗ Frontend Dockerfile not found or not readable${NC}"
+    exit 1
 fi
 
 # Summary

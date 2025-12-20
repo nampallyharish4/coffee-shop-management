@@ -39,7 +39,7 @@ services:
     container_name: coffee-shop-backend-prod
     restart: always
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/${MYSQL_DATABASE:-coffee_shop}?createDatabaseIfNotExist=false&useSSL=true&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/${MYSQL_DATABASE:-coffee_shop}?createDatabaseIfNotExist=false&useSSL=false&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate

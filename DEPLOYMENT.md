@@ -194,6 +194,11 @@ Before deploying to production:
    # Set to validate or none in production
    spring.jpa.hibernate.ddl-auto=validate
    ```
+   
+   **Note**: MySQL SSL is disabled in the default configuration for simplicity. To enable SSL:
+   - Configure MySQL server with SSL certificates
+   - Update connection string: `useSSL=true&requireSSL=true`
+   - Provide certificate paths in Spring Boot configuration
 
 ### Docker Production Deployment
 

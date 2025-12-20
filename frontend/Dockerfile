@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci
 
 # Copy source code and build
 COPY . .
@@ -15,6 +15,9 @@ RUN npm run build
 # Stage 2: Production with nginx
 FROM nginx:alpine
 WORKDIR /usr/share/nginx/html
+
+# Install wget for health checks
+RUN apk add --no-cache wget
 
 # Remove default nginx static assets
 RUN rm -rf ./*
