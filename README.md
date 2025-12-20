@@ -87,10 +87,10 @@ Explore the system using these pre-configured accounts:
 
 | Role | Email | Password |
 | :--- | :--- | :--- |
-| **Admin** | `admin@coffeeshop.com` | `Admin@123` |
-| **Cashier** | `cashier@coffeeshop.com` | `Cashier@123` |
-| **Barista** | `barista@coffeeshop.com` | `Barista@123` |
-| **Inventory** | `inventory@coffeeshop.com` | `Inventory@123` |
+| **Admin** | `admin@coffeeshop.com` | 
+| **Cashier** | `cashier@coffeeshop.com` | 
+| **Barista** | `barista@coffeeshop.com` | 
+| **Inventory** | `inventory@coffeeshop.com` | 
 
 ---
 
