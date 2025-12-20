@@ -4,7 +4,7 @@
 FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copy package files and install dependencies (including devDependencies needed for build)
 COPY package*.json ./
 RUN npm ci
 

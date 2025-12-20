@@ -30,6 +30,8 @@ services:
     container_name: coffee-shop-backend
     restart: unless-stopped
     environment:
+      # Note: allowPublicKeyRetrieval=true is used for development convenience
+      # Remove this parameter in production for better security
       SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/${MYSQL_DATABASE:-coffee_shop}?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-coffee_admin}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-Coffee@123}

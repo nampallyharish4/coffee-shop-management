@@ -46,8 +46,16 @@ else
     exit 1
 fi
 
+echo "4. Validating docker-compose.prod.yml..."
+if docker compose -f docker-compose.prod.yml config > /dev/null 2>&1; then
+    echo -e "${GREEN}✓ docker-compose.prod.yml is valid${NC}"
+else
+    echo -e "${RED}✗ docker-compose.prod.yml has errors${NC}"
+    exit 1
+fi
+
 # Check required files
-echo "4. Checking required files..."
+echo "5. Checking required files..."
 files=(
     "backend/Dockerfile"
     "backend/.dockerignore"
@@ -70,7 +78,7 @@ for file in "${files[@]}"; do
 done
 
 # Check .env file
-echo "5. Checking environment configuration..."
+echo "6. Checking environment configuration..."
 if [ -f .env ]; then
     echo -e "${GREEN}✓ .env file exists${NC}"
 else
@@ -78,7 +86,7 @@ else
 fi
 
 # Validate Dockerfile syntax (basic check)
-echo "6. Checking Dockerfile files exist and are readable..."
+echo "7. Checking Dockerfile files exist and are readable..."
 if [ -r "backend/Dockerfile" ]; then
     echo -e "${GREEN}✓ Backend Dockerfile exists and is readable${NC}"
 else
