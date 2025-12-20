@@ -53,7 +53,7 @@ This system provides a comprehensive solution for coffee shop owners and staff. 
 | **Frontend** | React 18, Material UI (MUI), Recharts, Axios |
 | **Database** | MySQL 8.0 |
 | **Documentation** | Swagger / OpenAPI 3.0 |
-| **Deployment** | Azure Ready (App Service, Static Web Apps) |
+| **Deployment** | Docker Ready (or Local) |
 
 ---
 
@@ -122,13 +122,6 @@ Once the backend is running, access the interactive Swagger UI at:
 
 ---
 
-## ☁️ Azure Deployment
-
-The project includes scripts for automated Azure deployment:
-1. Use `azure-setup.ps1` to provision resources.
-2. Follow the prompt to deploy the backend to Azure App Service and the frontend to Azure Static Web Apps.
-
----
 
 ## 🛡️ License
 
