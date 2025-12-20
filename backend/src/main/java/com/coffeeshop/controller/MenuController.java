@@ -19,6 +19,7 @@ import java.util.List;
 @RequestMapping("/api/menu")
 @Tag(name = "Menu Management", description = "Menu management endpoints")
 @SecurityRequirement(name = "Bearer Authentication")
+@SuppressWarnings("null")
 public class MenuController {
     @Autowired
     private MenuService menuService;
@@ -39,7 +40,7 @@ public class MenuController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get menu item by ID")
-    public ResponseEntity<ApiResponse> getMenuItemById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse> getMenuItemById(@PathVariable long id) {
         MenuItemDTO item = menuService.getMenuItemById(id);
         return ResponseEntity.ok(new ApiResponse(true, "Menu item retrieved successfully", item));
     }
@@ -56,7 +57,7 @@ public class MenuController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update menu item")
-    public ResponseEntity<ApiResponse> updateMenuItem(@PathVariable Long id, @Valid @RequestBody MenuItemDTO menuItemDTO) {
+    public ResponseEntity<ApiResponse> updateMenuItem(@PathVariable long id, @Valid @RequestBody MenuItemDTO menuItemDTO) {
         MenuItemDTO updated = menuService.updateMenuItem(id, menuItemDTO);
         return ResponseEntity.ok(new ApiResponse(true, "Menu item updated successfully", updated));
     }
@@ -64,7 +65,7 @@ public class MenuController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete menu item")
-    public ResponseEntity<ApiResponse> deleteMenuItem(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse> deleteMenuItem(@PathVariable long id) {
         menuService.deleteMenuItem(id);
         return ResponseEntity.ok(new ApiResponse(true, "Menu item deleted successfully"));
     }

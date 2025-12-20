@@ -4,17 +4,26 @@ import com.coffeeshop.dto.InventoryItemDTO;
 import com.coffeeshop.entity.InventoryItem;
 import com.coffeeshop.exception.ResourceNotFoundException;
 import com.coffeeshop.repository.InventoryItemRepository;
+import com.coffeeshop.repository.InventoryUsageRepository;
+import com.coffeeshop.dto.InventoryUsageDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
 
 @Service
+@SuppressWarnings("null")
 public class InventoryService {
     @Autowired
     private InventoryItemRepository inventoryItemRepository;
+
+    @Autowired
+    private InventoryUsageRepository inventoryUsageRepository;
 
     public List<InventoryItemDTO> getAllInventoryItems() {
         return inventoryItemRepository.findAll().stream()
@@ -34,39 +43,39 @@ public class InventoryService {
                 .collect(Collectors.toList());
     }
 
-    public InventoryItemDTO getInventoryItemById(Long id) {
-        InventoryItem item = inventoryItemRepository.findById(id)
+    public InventoryItemDTO getInventoryItemById(long id) {
+        return inventoryItemRepository.findById(id)
+                .map(this::convertToDTO)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory item not found"));
-        return convertToDTO(item);
     }
 
     @Transactional
     public InventoryItemDTO createInventoryItem(InventoryItemDTO dto) {
         InventoryItem item = new InventoryItem();
         updateInventoryItemFromDTO(item, dto);
-        InventoryItem saved = inventoryItemRepository.save(item);
+        InventoryItem saved = Objects.requireNonNull(inventoryItemRepository.save(item));
         return convertToDTO(saved);
     }
 
     @Transactional
-    public InventoryItemDTO updateInventoryItem(Long id, InventoryItemDTO dto) {
+    public InventoryItemDTO updateInventoryItem(long id, InventoryItemDTO dto) {
         InventoryItem item = inventoryItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory item not found"));
         updateInventoryItemFromDTO(item, dto);
-        InventoryItem updated = inventoryItemRepository.save(item);
-        return convertToDTO(updated);
+        InventoryItem saved = Objects.requireNonNull(inventoryItemRepository.save(item));
+        return convertToDTO(saved);
     }
 
     @Transactional
-    public InventoryItemDTO addStock(Long id, InventoryItemDTO dto) {
+    public InventoryItemDTO addStock(long id, InventoryItemDTO dto) {
         InventoryItem item = inventoryItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory item not found"));
         item.setCurrentStock(item.getCurrentStock().add(dto.getCurrentStock()));
-        InventoryItem updated = inventoryItemRepository.save(item);
-        return convertToDTO(updated);
+        InventoryItem saved = Objects.requireNonNull(inventoryItemRepository.save(item));
+        return convertToDTO(saved);
     }
 
-    public void deleteInventoryItem(Long id) {
+    public void deleteInventoryItem(long id) {
         if (!inventoryItemRepository.existsById(id)) {
             throw new ResourceNotFoundException("Inventory item not found");
         }
@@ -78,15 +87,12 @@ public class InventoryService {
         item.setUnit(dto.getUnit());
         item.setCurrentStock(dto.getCurrentStock());
         item.setReorderLevel(dto.getReorderLevel());
-        item.setUnitPrice(dto.getUnitPrice() != null ? dto.getUnitPrice() : java.math.BigDecimal.ZERO);
+        item.setUnitPrice(dto.getUnitPrice() != null ? dto.getUnitPrice() : BigDecimal.ZERO);
     }
 
-    @Autowired
-    private com.coffeeshop.repository.InventoryUsageRepository inventoryUsageRepository;
-
-    public List<com.coffeeshop.dto.InventoryUsageDTO> getInventoryUsageHistory() {
-        return inventoryUsageRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "usedAt")).stream()
-                .map(usage -> new com.coffeeshop.dto.InventoryUsageDTO(
+    public List<InventoryUsageDTO> getInventoryUsageHistory() {
+        return inventoryUsageRepository.findAll(Sort.by(Sort.Direction.DESC, "usedAt")).stream()
+                .map(usage -> new InventoryUsageDTO(
                         usage.getId(),
                         usage.getInventoryItem().getId(),
                         usage.getInventoryItem().getName(),

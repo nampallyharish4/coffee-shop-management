@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@SuppressWarnings("null")
 public class AnalyticsService {
     @Autowired
     private OrderRepository orderRepository;
@@ -41,7 +43,7 @@ public class AnalyticsService {
         Map<String, Object> summary = new HashMap<>();
         summary.put("totalRevenue", totalRevenue);
         summary.put("orderCount", orderCount);
-        summary.put("averageOrderValue", orderCount > 0 ? totalRevenue.divide(new BigDecimal(orderCount), 2, BigDecimal.ROUND_HALF_UP) : BigDecimal.ZERO);
+        summary.put("averageOrderValue", orderCount > 0 ? totalRevenue.divide(new BigDecimal(orderCount), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
         summary.put("period", range);
         summary.put("startDate", dateRange[0]);
         summary.put("endDate", dateRange[1]);

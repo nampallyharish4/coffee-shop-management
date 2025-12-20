@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@SuppressWarnings("null")
 public class UserService {
     @Autowired
     private UserRepository userRepository;
@@ -33,7 +34,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    public UserDTO getUserById(Long id) {
+    public UserDTO getUserById(long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return convertToDTO(user);
@@ -57,12 +58,12 @@ public class UserService {
         }
         user.setRoles(roles);
 
-        User savedUser = userRepository.save(user);
+        User savedUser = java.util.Objects.requireNonNull(userRepository.save(user));
         return convertToDTO(savedUser);
     }
 
     @Transactional
-    public UserDTO updateUser(Long id, UserDTO userDTO) {
+    public UserDTO updateUser(long id, UserDTO userDTO) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -87,11 +88,11 @@ public class UserService {
             user.setRoles(roles);
         }
 
-        User updatedUser = userRepository.save(user);
+        User updatedUser = java.util.Objects.requireNonNull(userRepository.save(user));
         return convertToDTO(updatedUser);
     }
 
-    public void deleteUser(Long id) {
+    public void deleteUser(long id) {
         if (!userRepository.existsById(id)) {
             throw new ResourceNotFoundException("User not found");
         }

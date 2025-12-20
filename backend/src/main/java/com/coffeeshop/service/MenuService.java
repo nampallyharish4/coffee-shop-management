@@ -14,9 +14,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
 
 @Service
+@SuppressWarnings("null")
 public class MenuService {
     @Autowired
     private MenuItemRepository menuItemRepository;
@@ -39,30 +42,30 @@ public class MenuService {
                 .collect(Collectors.toList());
     }
 
-    public MenuItemDTO getMenuItemById(Long id) {
-        MenuItem menuItem = menuItemRepository.findById(id)
+    public MenuItemDTO getMenuItemById(long id) {
+        return menuItemRepository.findById(id)
+                .map(this::convertToDTO)
                 .orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
-        return convertToDTO(menuItem);
     }
 
     @Transactional
     public MenuItemDTO createMenuItem(MenuItemDTO dto) {
         MenuItem menuItem = new MenuItem();
         updateMenuItemFromDTO(menuItem, dto);
-        MenuItem saved = menuItemRepository.save(menuItem);
+        MenuItem saved = Objects.requireNonNull(menuItemRepository.save(menuItem));
         return convertToDTO(saved);
     }
 
     @Transactional
-    public MenuItemDTO updateMenuItem(Long id, MenuItemDTO dto) {
+    public MenuItemDTO updateMenuItem(long id, MenuItemDTO dto) {
         MenuItem menuItem = menuItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
         updateMenuItemFromDTO(menuItem, dto);
-        MenuItem updated = menuItemRepository.save(menuItem);
-        return convertToDTO(updated);
+        MenuItem saved = Objects.requireNonNull(menuItemRepository.save(menuItem));
+        return convertToDTO(saved);
     }
 
-    public void deleteMenuItem(Long id) {
+    public void deleteMenuItem(long id) {
         if (!menuItemRepository.existsById(id)) {
             throw new ResourceNotFoundException("Menu item not found");
         }
@@ -76,42 +79,40 @@ public class MenuService {
         menuItem.setImageUrl(dto.getImageUrl());
         menuItem.setActive(dto.getActive() != null ? dto.getActive() : true);
 
-        Category category = categoryRepository.findById(dto.getCategoryId())
+        Long categoryId = Objects.requireNonNull(dto.getCategoryId(), "Category ID is required");
+        Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         menuItem.setCategory(category);
 
         // If it's a new menu item, save it first to get an ID before adding ingredients
         if (menuItem.getId() == null) {
-            menuItem = menuItemRepository.save(menuItem);
+            menuItem = Objects.requireNonNull(menuItemRepository.save(menuItem));
         }
 
-        if (dto.getIngredients() != null) {
+        if (dto.getIngredients() != null && menuItem != null) {
             menuItem.getIngredients().clear();
             for (MenuItemDTO.IngredientDTO ingredientDTO : dto.getIngredients()) {
                 InventoryItem inventoryItem = null;
 
-                // 1. Try by ID if present
-                if (ingredientDTO.getInventoryItemId() != null) {
-                   inventoryItem = inventoryItemRepository.findById(ingredientDTO.getInventoryItemId())
+                Long inventoryItemId = ingredientDTO.getInventoryItemId();
+                if (inventoryItemId != null) {
+                   inventoryItem = inventoryItemRepository.findById(inventoryItemId)
                            .orElse(null);
                 }
 
-                // 2. If not found by ID, try by Name
                 if (inventoryItem == null && ingredientDTO.getInventoryItemName() != null) {
                     inventoryItem = inventoryItemRepository.findByName(ingredientDTO.getInventoryItemName())
                             .orElse(null);
                 }
 
-                // 3. If still null, create new Inventory Item
                 if (inventoryItem == null && ingredientDTO.getInventoryItemName() != null) {
                     InventoryItem newItem = new InventoryItem();
                     newItem.setName(ingredientDTO.getInventoryItemName());
-                    // Set unit from DTO or default
                     newItem.setUnit(ingredientDTO.getUnit() != null ? ingredientDTO.getUnit() : "unit");
-                    newItem.setCurrentStock(java.math.BigDecimal.ZERO);
-                    newItem.setReorderLevel(java.math.BigDecimal.TEN);
-                    newItem.setUnitPrice(java.math.BigDecimal.ZERO);
-                    inventoryItem = inventoryItemRepository.save(newItem);
+                    newItem.setCurrentStock(BigDecimal.ZERO);
+                    newItem.setReorderLevel(BigDecimal.TEN);
+                    newItem.setUnitPrice(BigDecimal.ZERO);
+                    inventoryItem = Objects.requireNonNull(inventoryItemRepository.save(newItem));
                 }
 
                 if (inventoryItem != null) {

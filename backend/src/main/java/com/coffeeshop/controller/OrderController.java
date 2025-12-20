@@ -20,6 +20,7 @@ import java.util.Map;
 @RequestMapping("/api/orders")
 @Tag(name = "Order Management", description = "Order management endpoints")
 @SecurityRequirement(name = "Bearer Authentication")
+@SuppressWarnings("null")
 public class OrderController {
     @Autowired
     private OrderService orderService;
@@ -40,7 +41,7 @@ public class OrderController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get order by ID")
-    public ResponseEntity<ApiResponse> getOrderById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse> getOrderById(@PathVariable long id) {
         OrderDTO order = orderService.getOrderById(id);
         return ResponseEntity.ok(new ApiResponse(true, "Order retrieved successfully", order));
     }
@@ -55,7 +56,7 @@ public class OrderController {
 
     @PutMapping("/{id}/status")
     @Operation(summary = "Update order status")
-    public ResponseEntity<ApiResponse> updateOrderStatus(@PathVariable Long id, @RequestBody Map<String, String> request) {
+    public ResponseEntity<ApiResponse> updateOrderStatus(@PathVariable long id, @RequestBody Map<String, String> request) {
         String status = request.get("status");
         OrderDTO updated = orderService.updateOrderStatus(id, status);
         return ResponseEntity.ok(new ApiResponse(true, "Order status updated successfully", updated));
@@ -63,7 +64,7 @@ public class OrderController {
 
     @PutMapping("/{id}/cancel")
     @Operation(summary = "Cancel order")
-    public ResponseEntity<ApiResponse> cancelOrder(@PathVariable Long id, @RequestBody Map<String, String> request) {
+    public ResponseEntity<ApiResponse> cancelOrder(@PathVariable long id, @RequestBody Map<String, String> request) {
         String reason = request.get("reason");
         OrderDTO cancelled = orderService.cancelOrder(id, reason);
         return ResponseEntity.ok(new ApiResponse(true, "Order cancelled successfully", cancelled));

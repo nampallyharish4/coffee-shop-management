@@ -19,6 +19,7 @@ import java.util.List;
 @RequestMapping("/api/inventory")
 @Tag(name = "Inventory Management", description = "Inventory management endpoints")
 @SecurityRequirement(name = "Bearer Authentication")
+@SuppressWarnings("null")
 public class InventoryController {
     @Autowired
     private InventoryService inventoryService;
@@ -50,7 +51,7 @@ public class InventoryController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
     @Operation(summary = "Get inventory item by ID")
-    public ResponseEntity<ApiResponse> getInventoryItemById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse> getInventoryItemById(@PathVariable long id) {
         InventoryItemDTO item = inventoryService.getInventoryItemById(id);
         return ResponseEntity.ok(new ApiResponse(true, "Inventory item retrieved successfully", item));
     }
@@ -67,7 +68,7 @@ public class InventoryController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
     @Operation(summary = "Update inventory item")
-    public ResponseEntity<ApiResponse> updateInventoryItem(@PathVariable Long id, @Valid @RequestBody InventoryItemDTO inventoryItemDTO) {
+    public ResponseEntity<ApiResponse> updateInventoryItem(@PathVariable long id, @Valid @RequestBody InventoryItemDTO inventoryItemDTO) {
         InventoryItemDTO updated = inventoryService.updateInventoryItem(id, inventoryItemDTO);
         return ResponseEntity.ok(new ApiResponse(true, "Inventory item updated successfully", updated));
     }
@@ -75,7 +76,7 @@ public class InventoryController {
     @PostMapping("/{id}/add-stock")
     @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
     @Operation(summary = "Add stock to inventory item")
-    public ResponseEntity<ApiResponse> addStock(@PathVariable Long id, @RequestBody InventoryItemDTO inventoryItemDTO) {
+    public ResponseEntity<ApiResponse> addStock(@PathVariable long id, @RequestBody InventoryItemDTO inventoryItemDTO) {
         InventoryItemDTO updated = inventoryService.addStock(id, inventoryItemDTO);
         return ResponseEntity.ok(new ApiResponse(true, "Stock added successfully", updated));
     }
@@ -83,7 +84,7 @@ public class InventoryController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
     @Operation(summary = "Delete inventory item")
-    public ResponseEntity<ApiResponse> deleteInventoryItem(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse> deleteInventoryItem(@PathVariable long id) {
         inventoryService.deleteInventoryItem(id);
         return ResponseEntity.ok(new ApiResponse(true, "Inventory item deleted successfully"));
     }

@@ -11,11 +11,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
+@SuppressWarnings("null")
 public class OrderService {
     @Autowired
     private OrderRepository orderRepository;
@@ -25,9 +28,6 @@ public class OrderService {
 
     @Autowired
     private MenuItemRepository menuItemRepository;
-
-    @Autowired
-    private PaymentRepository paymentRepository;
 
     @Autowired
     private InventoryItemRepository inventoryItemRepository;
@@ -50,10 +50,10 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    public OrderDTO getOrderById(Long id) {
-        Order order = orderRepository.findById(id)
+    public OrderDTO getOrderById(long id) {
+        return orderRepository.findById(id)
+                .map(this::convertToDTO)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
-        return convertToDTO(order);
     }
 
     @Transactional
@@ -61,7 +61,8 @@ public class OrderService {
         UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext()
                 .getAuthentication().getPrincipal();
         
-        User cashier = userRepository.findById(userDetails.getId())
+        Long cashierId = Objects.requireNonNull(userDetails.getId(), "User ID is required");
+        User cashier = userRepository.findById(cashierId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Order order = new Order();
@@ -70,9 +71,9 @@ public class OrderService {
 
         BigDecimal subtotal = BigDecimal.ZERO;
         
-        // First pass: Build order items and calculate totals
         for (OrderDTO.OrderItemDTO itemDTO : dto.getItems()) {
-            MenuItem menuItem = menuItemRepository.findById(itemDTO.getMenuItemId())
+            Long menuItemId = Objects.requireNonNull(itemDTO.getMenuItemId(), "Menu item ID is required");
+            MenuItem menuItem = menuItemRepository.findById(menuItemId)
                     .orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
 
             OrderItem orderItem = new OrderItem();
@@ -91,7 +92,7 @@ public class OrderService {
         order.setCouponCode(dto.getCouponCode());
         
         BigDecimal taxableAmount = subtotal.subtract(order.getDiscount());
-        order.setTax(taxableAmount.multiply(TAX_RATE).setScale(2, java.math.RoundingMode.HALF_UP));
+        order.setTax(taxableAmount.multiply(TAX_RATE).setScale(2, RoundingMode.HALF_UP));
         
         BigDecimal rawTotal = taxableAmount.add(order.getTax());
         
@@ -99,8 +100,7 @@ public class OrderService {
             order.setRoundOff(dto.getRoundOff());
             order.setTotal(rawTotal.add(dto.getRoundOff()));
         } else {
-            // Default to nearest integer rounding to match frontend logic
-            BigDecimal roundedTotal = rawTotal.setScale(0, java.math.RoundingMode.HALF_UP).setScale(2);
+            BigDecimal roundedTotal = rawTotal.setScale(0, RoundingMode.HALF_UP).setScale(2);
             order.setRoundOff(roundedTotal.subtract(rawTotal));
             order.setTotal(roundedTotal);
         }
@@ -114,18 +114,16 @@ public class OrderService {
             order.setPayment(payment);
         }
 
-        // Validate stock before saving
         validateStock(order);
 
-        // Save order and deduct inventory
-        Order savedOrder = orderRepository.save(order);
+        Order savedOrder = Objects.requireNonNull(orderRepository.save(order));
         deductInventory(savedOrder);
         
         return convertToDTO(savedOrder);
     }
 
     @Transactional
-    public OrderDTO updateOrderStatus(Long id, String status) {
+    public OrderDTO updateOrderStatus(long id, String status) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
@@ -134,15 +132,14 @@ public class OrderService {
 
         if (newStatus == Order.OrderStatus.COMPLETED) {
             order.setCompletedAt(LocalDateTime.now());
-            // Inventory is already deducted at creation
         }
 
-        Order updated = orderRepository.save(order);
+        Order updated = Objects.requireNonNull(orderRepository.save(order));
         return convertToDTO(updated);
     }
 
     @Transactional
-    public OrderDTO cancelOrder(Long id, String reason) {
+    public OrderDTO cancelOrder(long id, String reason) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
@@ -153,32 +150,21 @@ public class OrderService {
         order.setStatus(Order.OrderStatus.CANCELLED);
         order.setCancellationReason(reason);
 
-        // Restore inventory when cancelling
         restoreInventory(order);
 
-        Order updated = orderRepository.save(order);
+        Order updated = Objects.requireNonNull(orderRepository.save(order));
         return convertToDTO(updated);
     }
 
-    /**
-     * Reset revenue by canceling all completed orders
-     * This effectively resets the revenue calculation to zero
-     * while preserving order history
-     */
     @Transactional
     public int resetRevenue() {
         List<Order> completedOrders = orderRepository.findByStatus(Order.OrderStatus.COMPLETED);
         int cancelledCount = 0;
         
         for (Order order : completedOrders) {
-            // Check if already cancelled to avoid double restoration if we were to call restoreInventory
             if (order.getStatus() != Order.OrderStatus.CANCELLED) {
                 order.setStatus(Order.OrderStatus.CANCELLED);
                 order.setCancellationReason("Revenue reset");
-                // Optionally restore inventory here. Since it's a "revenue reset" and not a real cancellation,
-                // we might not want to restore physical stock if the coffee was already drunk.
-                // However, for data consistency, let's assume we don't restore stock for revenue reset
-                // or we can decide based on business logic. Defaulting to NO restoration for revenue reset.
                 orderRepository.save(order);
                 cancelledCount++;
             }
@@ -189,9 +175,7 @@ public class OrderService {
 
     @Transactional
     public void deleteAllOrders() {
-        // First delete foreign key dependencies in inventory_usage using custom efficient query
         inventoryUsageRepository.deleteAll();
-        // Then delete all orders (cascade will handle items and payments)
         orderRepository.deleteAll();
     }
 
@@ -206,8 +190,7 @@ public class OrderService {
                             .multiply(new BigDecimal(orderItem.getQuantity()));
                     
                     if (inventoryItem.getCurrentStock().compareTo(totalRequired) < 0) {
-                        throw new IllegalStateException("Insufficient stock for ingredient: " + inventoryItem.getName() + 
-                                ". Required: " + totalRequired + ", Available: " + inventoryItem.getCurrentStock());
+                        throw new IllegalStateException("Insufficient stock for ingredient: " + inventoryItem.getName());
                     }
                 }
             }
@@ -232,7 +215,6 @@ public class OrderService {
                     usage.setInventoryItem(inventoryItem);
                     usage.setQuantityUsed(totalRequired);
                     
-                    // Calculate cost based on unit price (default 0 if null)
                     BigDecimal unitPrice = inventoryItem.getUnitPrice() != null ? inventoryItem.getUnitPrice() : BigDecimal.ZERO;
                     usage.setTotalCost(totalRequired.multiply(unitPrice));
                     

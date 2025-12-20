@@ -19,6 +19,7 @@ import java.util.List;
 @RequestMapping("/api/users")
 @Tag(name = "User Management", description = "User management endpoints")
 @SecurityRequirement(name = "Bearer Authentication")
+@SuppressWarnings("null")
 public class UserController {
     @Autowired
     private UserService userService;
@@ -34,7 +35,7 @@ public class UserController {
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get user by ID")
-    public ResponseEntity<ApiResponse> getUserById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse> getUserById(@PathVariable long id) {
         UserDTO user = userService.getUserById(id);
         return ResponseEntity.ok(new ApiResponse(true, "User retrieved successfully", user));
     }
@@ -51,7 +52,7 @@ public class UserController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update user")
-    public ResponseEntity<ApiResponse> updateUser(@PathVariable Long id, @Valid @RequestBody UserDTO userDTO) {
+    public ResponseEntity<ApiResponse> updateUser(@PathVariable long id, @Valid @RequestBody UserDTO userDTO) {
         UserDTO updated = userService.updateUser(id, userDTO);
         return ResponseEntity.ok(new ApiResponse(true, "User updated successfully", updated));
     }
@@ -59,7 +60,7 @@ public class UserController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete user")
-    public ResponseEntity<ApiResponse> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse> deleteUser(@PathVariable long id) {
         userService.deleteUser(id);
         return ResponseEntity.ok(new ApiResponse(true, "User deleted successfully"));
     }

@@ -17,6 +17,7 @@ import java.util.Map;
 @RequestMapping("/api/analytics")
 @Tag(name = "Analytics", description = "Analytics and reporting endpoints")
 @SecurityRequirement(name = "Bearer Authentication")
+@SuppressWarnings("null")
 public class AnalyticsController {
     @Autowired
     private AnalyticsService analyticsService;

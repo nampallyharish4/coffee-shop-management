@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Authentication endpoints")
+@SuppressWarnings("null")
 public class AuthController {
     @Autowired
     private AuthService authService;
