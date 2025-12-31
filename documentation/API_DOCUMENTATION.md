@@ -11,7 +11,7 @@ Login and receive JWT token
 ```json
 {
   "email": "admin@coffeeshop.com",
-  "password": "Admin@123"
+  "password": "[PASSWORD]"
 }
 ```
 
@@ -47,7 +47,7 @@ Create new user
 {
   "name": "John Doe",
   "email": "john@example.com",
-  "password": "Password@123",
+  "password": "[PASSWORD]",
   "roles": ["ROLE_CASHIER"]
 }
 ```

@@ -81,16 +81,9 @@ start_app.bat
 
 ---
 
-## 🔑 Default Credentials
+## 🔑 Access Control
 
-Explore the system using these pre-configured accounts:
-
-| Role | Email |
-| :--- | :--- |
-| **Admin** | `admin@coffeeshop.com` |
-| **Cashier** | `cashier@coffeeshop.com` |
-| **Barista** | `barista@coffeeshop.com` |
-| **Inventory** | `inventory@coffeeshop.com` |
+The system uses role-based access control (RBAC). For details on default users and permissions, please refer to the [features documentation](./documentation/FEATURES.md).
 
 ---
 
