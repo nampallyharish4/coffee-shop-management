@@ -24,14 +24,10 @@ public class UserDTO {
     
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$", 
-             message = "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character",
-             groups = PasswordValidation.class)
+             message = "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character")
     private String password;
     
     private Boolean active;
     
     private Set<String> roles;
-    
-    // Validation group for password validation
-    public interface PasswordValidation {}
 }

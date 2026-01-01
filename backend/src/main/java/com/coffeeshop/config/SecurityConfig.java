@@ -77,10 +77,19 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .headers(headers -> headers
                 .contentSecurityPolicy(csp -> csp
-                    .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;"))
+                    .policyDirectives("default-src 'self'; " +
+                                    "script-src 'self'; " +
+                                    "style-src 'self' https://fonts.googleapis.com; " +
+                                    "font-src 'self' https://fonts.gstatic.com data:; " +
+                                    "img-src 'self' data:; " +
+                                    "connect-src 'self'; " +
+                                    "object-src 'none'; " +
+                                    "base-uri 'self'; " +
+                                    "form-action 'self'; " +
+                                    "frame-ancestors 'none';"))
                 .frameOptions(frameOptions -> frameOptions.deny())
                 .xssProtection(xss -> xss.headerValue("1; mode=block"))
-                .contentTypeOptions(contentTypeOptions -> contentTypeOptions.disable())
+                .contentTypeOptions(contentTypeOptions -> {})
             );
 
         http.authenticationProvider(authenticationProvider());
