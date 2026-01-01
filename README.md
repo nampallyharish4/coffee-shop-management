@@ -87,6 +87,22 @@ The system uses role-based access control (RBAC). For details on default users a
 
 ---
 
+## 🛡️ Security
+
+This system implements enterprise-grade security measures to protect your data and operations:
+
+- **Authentication**: JWT-based secure token authentication
+- **Authorization**: Role-based access control (RBAC) with four distinct roles
+- **Password Security**: BCrypt hashing with 12 rounds
+- **Input Validation**: Comprehensive validation on all user inputs
+- **Security Headers**: CSP, X-Frame-Options, XSS Protection
+- **CORS Protection**: Configurable origin restrictions
+- **Dependency Security**: All dependencies checked and updated for known vulnerabilities
+
+**Important**: Before deploying to production, please review the [Security Configuration Guide](./SECURITY.md) for proper setup of environment variables and security best practices.
+
+---
+
 ## 📂 Project Organization
 
 - `backend/`: Spring Boot source code and API logic.
@@ -105,6 +121,7 @@ For deeper technical insights, please refer to the documents in the `/documentat
 - 🔌 [API Reference](./documentation/API_DOCUMENTATION.md)
 - 🏗️ [Project Structure](./documentation/PROJECT_STRUCTURE.md)
 - 🥘 [Recipe & Inventory Logic](./documentation/RECIPES.md)
+- 🔐 [Security Configuration Guide](./SECURITY.md)
 
 ---
 
