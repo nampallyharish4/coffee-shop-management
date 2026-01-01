@@ -21,6 +21,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
+
 import java.util.Arrays;
 
 @Configuration
@@ -88,7 +90,7 @@ public class SecurityConfig {
                                     "form-action 'self'; " +
                                     "frame-ancestors 'none';"))
                 .frameOptions(frameOptions -> frameOptions.deny())
-                .xssProtection(xss -> xss.headerValue("1; mode=block"))
+                .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
                 .contentTypeOptions(contentTypeOptions -> {})
             );
 
