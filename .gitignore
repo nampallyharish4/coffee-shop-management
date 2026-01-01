@@ -35,7 +35,12 @@ Thumbs.db
 
 # Logs
 *.log
-.gz
+*.gz
 
-# Environment
+# Environment and Secrets
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
