@@ -8,10 +8,22 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
+    try {
+      const storedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      if (storedUser && token) {
+        const parsedUser = JSON.parse(storedUser);
+
+        if (parsedUser && parsedUser.roles && Array.isArray(parsedUser.roles)) {
+          setUser(parsedUser);
+        } else {
+          throw new Error('Invalid user data structure');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to parse user from localStorage', error);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
     }
     setLoading(false);
   }, []);
@@ -20,17 +32,17 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.login({ email, password });
       const { token, id, name, email: userEmail, roles } = response.data.data;
-      
+
       const userData = { id, name, email: userEmail, roles };
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
-      
+
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Login failed' 
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Login failed',
       };
     }
   };

@@ -3,7 +3,7 @@ import './Loader.css';
 
 const Loader = () => {
   return (
-    <div className="loader-overlay">
+    <div className="loader-overlay" translate="no">
       <div className="loader-container">
         <div className="coffee-cup">
           <div className="smoke-container">

@@ -1,11 +1,13 @@
 # Security Configuration Guide
 
 ## Overview
+
 This document outlines the security measures implemented in the Coffee Shop Management System and provides guidelines for secure deployment.
 
 ## Security Features Implemented
 
 ### 1. Authentication & Authorization
+
 - **JWT-based Authentication**: Secure token-based authentication using JSON Web Tokens
 - **Role-Based Access Control (RBAC)**: Four roles with specific permissions:
   - ADMIN: Full system access
@@ -15,8 +17,9 @@ This document outlines the security measures implemented in the Coffee Shop Mana
 - **Password Encryption**: BCrypt with 12 rounds for password hashing
 
 ### 2. Input Validation
+
 - **Email Validation**: RFC-compliant email format validation
-- **Password Requirements**: 
+- **Password Requirements**:
   - Minimum 8 characters
   - Must contain uppercase, lowercase, digit, and special character
   - Maximum 100 characters to prevent DoS attacks
@@ -24,6 +27,7 @@ This document outlines the security measures implemented in the Coffee Shop Mana
 - **Size Limits**: All inputs have maximum size constraints to prevent buffer overflow attacks
 
 ### 3. Network Security
+
 - **CORS Configuration**: Restricted to specific origins (configurable via environment variable)
 - **Security Headers**:
   - Content Security Policy (CSP)
@@ -33,22 +37,26 @@ This document outlines the security measures implemented in the Coffee Shop Mana
 - **HTTPS Ready**: Database connections support SSL
 
 ### 4. Data Protection
+
 - **SQL Injection Prevention**: Using JPA with parameterized queries
 - **XSS Prevention**: Input validation and output encoding
 - **Sensitive Data**: No hardcoded credentials or secrets in code
 
 ### 5. Dependencies
+
 - **Up-to-date Libraries**: All dependencies checked for known vulnerabilities
-- **Frontend**: Axios updated to v1.12.0+ to fix SSRF and DoS vulnerabilities
-- **Backend**: Spring Boot 3.2.0 with latest security patches
+- **Frontend**: Axios updated to v1.7.9 to fix SSRF and DoS vulnerabilities
+- **Backend**: Spring Boot 3.4.1 with latest security patches (CVEs resolved)
 
 ### 6. Logging
+
 - **Secure Logging**: Production logging levels set to INFO to avoid exposing sensitive data
 - **No Password Logging**: Passwords are never logged in plain text
 
 ## Required Environment Variables
 
 ### Critical Security Variables
+
 These MUST be set before running the application:
 
 ```bash
@@ -64,6 +72,7 @@ ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
 ```
 
 ### Optional Variables
+
 ```bash
 SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/coffee_shop?createDatabaseIfNotExist=true&useSSL=true&serverTimezone=UTC
 SPRING_DATASOURCE_USERNAME=coffee_admin
@@ -75,15 +84,17 @@ SPRING_JPA_HIBERNATE_DDL_AUTO=update
 ### Development Environment
 
 1. **Copy the environment template**:
+
    ```bash
    cp .env.example .env
    ```
 
 2. **Generate a secure JWT secret**:
+
    ```bash
    # Linux/Mac
    openssl rand -base64 32
-   
+
    # Windows PowerShell
    [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 }))
    ```
@@ -114,11 +125,13 @@ SPRING_JPA_HIBERNATE_DDL_AUTO=update
 ### For Administrators
 
 1. **Password Policy**:
+
    - Enforce strong passwords for all users
    - Change default passwords immediately
    - Rotate credentials regularly
 
 2. **Access Control**:
+
    - Follow principle of least privilege
    - Regularly audit user roles and permissions
    - Disable inactive accounts
@@ -156,6 +169,7 @@ SPRING_JPA_HIBERNATE_DDL_AUTO=update
 ## Reporting Security Issues
 
 If you discover a security vulnerability, please:
+
 1. Do NOT open a public issue
 2. Email the security team directly
 3. Provide detailed information about the vulnerability
