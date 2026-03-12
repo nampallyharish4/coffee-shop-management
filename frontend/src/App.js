@@ -129,44 +129,15 @@ function AppRoutes() {
 }
 
 function App() {
-  const [isBackendReady, setIsBackendReady] = React.useState(false);
-
-  React.useEffect(() => {
-    const startTime = Date.now();
-    const minTime = 3000;
-
-    const checkBackend = async () => {
-      try {
-        await fetch('http://localhost:8081/api-docs', {
-          method: 'HEAD',
-          mode: 'no-cors',
-        });
-
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, minTime - elapsed);
-
-        setTimeout(() => setIsBackendReady(true), remaining);
-      } catch (error) {
-        setTimeout(checkBackend, 2000);
-      }
-    };
-
-    checkBackend();
-  }, []);
-
   return (
     <div translate="no">
       <ThemeProviderWrapper>
         <CssBaseline />
-        {isBackendReady ? (
-          <AuthProvider key="auth-provider">
-            <Router>
-              <AppRoutes />
-            </Router>
-          </AuthProvider>
-        ) : (
-          <Loader key="app-loader" />
-        )}
+        <AuthProvider key="auth-provider">
+          <Router>
+            <AppRoutes />
+          </Router>
+        </AuthProvider>
       </ThemeProviderWrapper>
     </div>
   );
