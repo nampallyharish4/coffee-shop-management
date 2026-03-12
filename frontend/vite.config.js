@@ -20,5 +20,26 @@ export default defineConfig({
   },
   build: {
     outDir: 'build',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return;
+          }
+
+          if (id.includes('@mui') || id.includes('@emotion')) {
+            return 'mui-vendor';
+          }
+
+          if (id.includes('recharts')) {
+            return 'charts-vendor';
+          }
+
+          if (id.includes('axios') || id.includes('react-router-dom')) {
+            return 'app-vendor';
+          }
+        },
+      },
+    },
   },
 });
