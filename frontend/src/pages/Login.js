@@ -18,13 +18,24 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const getHomePath = (user) => {
+    if (!user) return '/login';
+    if (user.roles.some((role) => ['ROLE_ADMIN', 'ROLE_BARISTA'].includes(role))) {
+      return '/dashboard';
+    }
+    if (user.roles.includes('ROLE_CASHIER')) {
+      return '/pos';
+    }
+    return '/inventory';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     const result = await login(email, password);
     if (result.success) {
-      navigate('/');
+      navigate(getHomePath(result.user), { replace: true });
     } else {
       setError(result.message);
     }
