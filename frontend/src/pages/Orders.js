@@ -1,61 +1,91 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
-  Paper, Table, TableBody, TableCell, TableHead, TableRow, Chip, Box,
-  Typography, Tabs, Tab, IconButton, Collapse, Button, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField, Snackbar, Alert, GlobalStyles,
-  useTheme, useMediaQuery
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Chip,
+  Box,
+  Typography,
+  Tabs,
+  Tab,
+  IconButton,
+  Collapse,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Snackbar,
+  Alert,
+  GlobalStyles,
 } from '@mui/material';
-import { KeyboardArrowDown, KeyboardArrowUp, Receipt, Print, Cancel } from '@mui/icons-material';
+import {
+  KeyboardArrowDown,
+  KeyboardArrowUp,
+  Receipt,
+  Print,
+  Cancel,
+} from '@mui/icons-material';
 import Layout from '../components/Layout';
 import { orderService } from '../services/api';
 
 const PrintStyles = () => (
-  <GlobalStyles styles={{
-    '@media print': {
-      'body *': {
-        visibility: 'hidden',
+  <GlobalStyles
+    styles={{
+      '@media print': {
+        'body *': {
+          visibility: 'hidden',
+        },
+        '.MuiDialog-root, .MuiDialog-root *': {
+          visibility: 'visible',
+        },
+        '.MuiDialog-root': {
+          position: 'fixed !important',
+          left: '0 !important',
+          top: '0 !important',
+          width: '100% !important',
+          height: '100% !important',
+          margin: '0 !important',
+          padding: '0 !important',
+          zIndex: '9999 !important',
+        },
+        '.MuiBackdrop-root': {
+          display: 'none !important',
+        },
+        '.MuiDialog-container': {
+          height: 'auto !important',
+        },
+        '.MuiPaper-root': {
+          boxShadow: 'none !important',
+          border: 'none !important',
+          width: '100% !important',
+          maxWidth: 'none !important',
+          margin: '0 !important',
+        },
+        '.MuiDialogActions-root, .MuiDialogTitle-root button, header, nav, aside':
+          {
+            display: 'none !important',
+          },
+        '.MuiDialogContent-root': {
+          padding: '0 !important',
+        },
       },
-      '.MuiDialog-root, .MuiDialog-root *': {
-        visibility: 'visible',
-      },
-      '.MuiDialog-root': {
-        position: 'fixed !important',
-        left: '0 !important',
-        top: '0 !important',
-        width: '100% !important',
-        height: '100% !important',
-        margin: '0 !important',
-        padding: '0 !important',
-        zIndex: '9999 !important',
-      },
-      '.MuiBackdrop-root': {
-        display: 'none !important',
-      },
-      '.MuiDialog-container': {
-        height: 'auto !important',
-      },
-      '.MuiPaper-root': {
-        boxShadow: 'none !important',
-        border: 'none !important',
-        width: '100% !important',
-        maxWidth: 'none !important',
-        margin: '0 !important',
-      },
-      '.MuiDialogActions-root, .MuiDialogTitle-root button, header, nav, aside': {
-        display: 'none !important',
-      },
-      '.MuiDialogContent-root': {
-        padding: '0 !important',
-      }
-    }
-  }} />
+    }}
+  />
 );
 
 const Orders = () => {
   const { hasRole } = useAuth();
   // Restrict view for Barista (who is not Admin or Cashier)
-  const isRestrictedView = hasRole('ROLE_BARISTA') && !hasRole('ROLE_ADMIN') && !hasRole('ROLE_CASHIER');
+  const isRestrictedView =
+    hasRole('ROLE_BARISTA') &&
+    !hasRole('ROLE_ADMIN') &&
+    !hasRole('ROLE_CASHIER');
 
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -77,10 +107,13 @@ const Orders = () => {
   };
 
   const [countdowns, setCountdowns] = useState({});
-  const [toast, setToast] = useState({ open: false, message: '', type: 'success' });
+  const [toast, setToast] = useState({
+    open: false,
+    message: '',
+    type: 'success',
+  });
   // Default to today (Local Time)
   const [selectedDate, setSelectedDate] = useState(getLocalDateString());
-
 
   const loadOrders = async () => {
     try {
@@ -104,13 +137,15 @@ const Orders = () => {
         filtered = orders;
         break;
       case 1: // Active Orders
-        filtered = orders.filter(o => ['CREATED', 'IN_PREPARATION', 'READY'].includes(o.status));
+        filtered = orders.filter((o) =>
+          ['CREATED', 'IN_PREPARATION', 'READY'].includes(o.status),
+        );
         break;
       case 2: // Completed
-        filtered = orders.filter(o => o.status === 'COMPLETED');
+        filtered = orders.filter((o) => o.status === 'COMPLETED');
         break;
       case 3: // Cancelled
-        filtered = orders.filter(o => o.status === 'CANCELLED');
+        filtered = orders.filter((o) => o.status === 'CANCELLED');
         break;
       default:
         filtered = orders;
@@ -118,25 +153,31 @@ const Orders = () => {
 
     // Filter by selected date if set
     if (selectedDate) {
-      filtered = filtered.filter(order => {
+      filtered = filtered.filter((order) => {
         if (!order.createdAt) return false;
         // Convert to Local YYYY-MM-DD
         const orderDate = getLocalDateString(new Date(order.createdAt));
         return orderDate === selectedDate;
       });
     }
-    
+
     setFilteredOrders(filtered);
   }, [tab, orders, selectedDate]);
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'CREATED': return 'warning';
-      case 'IN_PREPARATION': return 'info';
-      case 'READY': return 'success';
-      case 'COMPLETED': return 'default';
-      case 'CANCELLED': return 'error';
-      default: return 'default';
+      case 'CREATED':
+        return 'warning';
+      case 'IN_PREPARATION':
+        return 'info';
+      case 'READY':
+        return 'success';
+      case 'COMPLETED':
+        return 'default';
+      case 'CANCELLED':
+        return 'error';
+      default:
+        return 'default';
     }
   };
 
@@ -148,7 +189,7 @@ const Orders = () => {
       day: 'numeric',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -175,15 +216,18 @@ const Orders = () => {
     return Math.floor(remaining);
   }, []);
 
-  const canCancelOrder = React.useCallback((order) => {
-    // Can cancel if order is CREATED or IN_PREPARATION and within 45 seconds
-    const cancellableStatuses = ['CREATED', 'IN_PREPARATION'];
-    if (!cancellableStatuses.includes(order.status)) {
-      return false;
-    }
-    const timeRemaining = getTimeRemaining(order.createdAt);
-    return timeRemaining > 0;
-  }, [getTimeRemaining]);
+  const canCancelOrder = React.useCallback(
+    (order) => {
+      // Can cancel if order is CREATED or IN_PREPARATION and within 45 seconds
+      const cancellableStatuses = ['CREATED', 'IN_PREPARATION'];
+      if (!cancellableStatuses.includes(order.status)) {
+        return false;
+      }
+      const timeRemaining = getTimeRemaining(order.createdAt);
+      return timeRemaining > 0;
+    },
+    [getTimeRemaining],
+  );
 
   useEffect(() => {
     loadOrders();
@@ -206,7 +250,7 @@ const Orders = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       const newCountdowns = {};
-      orders.forEach(order => {
+      orders.forEach((order) => {
         if (canCancelOrder(order)) {
           const timeRemaining = getTimeRemaining(order.createdAt);
           if (timeRemaining > 0) {
@@ -235,7 +279,11 @@ const Orders = () => {
 
   const handleCancelOrder = async () => {
     if (!cancelReason.trim()) {
-      setToast({ open: true, message: 'Please provide a cancellation reason', type: 'error' });
+      setToast({
+        open: true,
+        message: 'Please provide a cancellation reason',
+        type: 'error',
+      });
       return;
     }
 
@@ -244,13 +292,17 @@ const Orders = () => {
       setCancelDialogOpen(false);
       setOrderToCancel(null);
       setCancelReason('');
-      setToast({ open: true, message: 'Order cancelled successfully', type: 'success' });
+      setToast({
+        open: true,
+        message: 'Order cancelled successfully',
+        type: 'success',
+      });
       loadOrders(); // Refresh orders
     } catch (error) {
-      setToast({ 
-        open: true, 
-        message: error.response?.data?.message || 'Failed to cancel order', 
-        type: 'error' 
+      setToast({
+        open: true,
+        message: error.response?.data?.message || 'Failed to cancel order',
+        type: 'error',
       });
     }
   };
@@ -272,10 +324,12 @@ const Orders = () => {
     return false;
   };
 
-  const displayOrders = filteredOrders.filter(order => !shouldHideOrder(order));
+  const displayOrders = filteredOrders.filter(
+    (order) => !shouldHideOrder(order),
+  );
 
   const getFilteredCount = (statuses) => {
-    return orders.filter(o => {
+    return orders.filter((o) => {
       // Status Check
       if (statuses && !statuses.includes(o.status)) return false;
       // Date Check
@@ -285,7 +339,7 @@ const Orders = () => {
       }
       // Hide Check (for restricted views)
       if (shouldHideOrder(o)) return false;
-      
+
       return true;
     }).length;
   };
@@ -293,7 +347,16 @@ const Orders = () => {
   return (
     <Layout title="Orders">
       <PrintStyles />
-      <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2 }}>
+      <Box
+        sx={{
+          mb: 3,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: 2,
+        }}
+      >
         <Box>
           <Typography variant="h5" fontWeight="bold" gutterBottom>
             Placed Orders
@@ -317,20 +380,42 @@ const Orders = () => {
         </Box>
       </Box>
 
-      <Tabs 
-        value={tab} 
-        onChange={(e, v) => setTab(v)} 
+      <Tabs
+        value={tab}
+        onChange={(e, v) => setTab(v)}
         sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
         variant="scrollable"
         scrollButtons="auto"
       >
-        {!isRestrictedView && <Tab label={`All Orders (${getFilteredCount(null)})`} value={0} />}
-        <Tab label={`Active (${getFilteredCount(['CREATED', 'IN_PREPARATION', 'READY'])})`} value={1} />
-        <Tab label={`Completed (${getFilteredCount(['COMPLETED'])})`} value={2} />
-        {!isRestrictedView && <Tab label={`Cancelled (${getFilteredCount(['CANCELLED'])})`} value={3} />}
+        {!isRestrictedView && (
+          <Tab label={`All Orders (${getFilteredCount(null)})`} value={0} />
+        )}
+        <Tab
+          label={`Active (${getFilteredCount(['CREATED', 'IN_PREPARATION', 'READY'])})`}
+          value={1}
+        />
+        <Tab
+          label={`Completed (${getFilteredCount(['COMPLETED'])})`}
+          value={2}
+        />
+        {!isRestrictedView && (
+          <Tab
+            label={`Cancelled (${getFilteredCount(['CANCELLED'])})`}
+            value={3}
+          />
+        )}
       </Tabs>
 
-      <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: '12px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+      <Paper
+        sx={{
+          width: '100%',
+          overflow: 'hidden',
+          borderRadius: '12px',
+          border: '1px solid',
+          borderColor: 'divider',
+          boxShadow: 'none',
+        }}
+      >
         <Box sx={{ overflowX: 'auto' }}>
           <Table stickyHeader>
             <TableHead>
@@ -345,158 +430,260 @@ const Orders = () => {
                 <TableCell sx={{ minWidth: 200 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
-          <TableBody>
-            {displayOrders.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                  <Typography variant="body1" color="text.secondary">
-                    No orders found
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              displayOrders.map(order => (
-                <React.Fragment key={order.id}>
-                  <TableRow hover>
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        #{order.id}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>{order.cashierName || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={order.status.replace('_', ' ')} 
-                        color={getStatusColor(order.status)}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {order.items?.length || 0} item(s)
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="subtitle2" fontWeight="bold" color="primary">
-                        ₹{Number(order.total || 0).toFixed(2)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      {order.payment?.method || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {formatDate(order.createdAt)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-                        <IconButton
+            <TableBody>
+              {displayOrders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                    <Typography variant="body1" color="text.secondary">
+                      No orders found
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                displayOrders.map((order) => (
+                  <React.Fragment key={order.id}>
+                    <TableRow hover>
+                      <TableCell>
+                        <Typography variant="subtitle2" fontWeight="bold">
+                          #{order.id}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{order.cashierName || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={order.status.replace('_', ' ')}
+                          color={getStatusColor(order.status)}
                           size="small"
-                          onClick={() => handleExpandOrder(order.id)}
-                        >
-                          {expandedOrder === order.id ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleViewReceipt(order)}
+                        />
+                      </TableCell>
+                      <TableCell>{order.items?.length || 0} item(s)</TableCell>
+                      <TableCell>
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight="bold"
                           color="primary"
                         >
-                          <Receipt />
-                        </IconButton>
-                        {canCancelOrder(order) && !isRestrictedView && (
-                          <Button
+                          ₹{Number(order.total || 0).toFixed(2)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{order.payment?.method || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {formatDate(order.createdAt)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            flexWrap: 'wrap',
+                          }}
+                        >
+                          <IconButton
                             size="small"
-                            variant="outlined"
-                            color="error"
-                            startIcon={<Cancel />}
-                            onClick={() => handleCancelClick(order)}
-                            sx={{ 
-                              minWidth: '140px',
-                              fontSize: '0.75rem',
-                              whiteSpace: 'nowrap'
-                            }}
+                            onClick={() => handleExpandOrder(order.id)}
                           >
-                            Cancel ({formatCountdown(countdowns[order.id] || getTimeRemaining(order.createdAt))})
-                          </Button>
-                        )}
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell colSpan={8} sx={{ py: 0, borderBottom: 'none' }}>
-                      <Collapse in={expandedOrder === order.id} timeout="auto" unmountOnExit>
-                        <Box sx={{ p: 2, backgroundColor: 'background.default' }}>
-                          <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-                            Order Details
-                          </Typography>
-                          <Table size="small">
-                            <TableHead>
-                              <TableRow>
-                                <TableCell>Item</TableCell>
-                                <TableCell align="center">Quantity</TableCell>
-                                <TableCell align="right">Price</TableCell>
-                                <TableCell align="right">Subtotal</TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {order.items?.map((item, idx) => (
-                                <TableRow key={idx}>
-                                  <TableCell>{item.menuItemName}</TableCell>
-                                  <TableCell align="center">{item.quantity}</TableCell>
-                                  <TableCell align="right">₹{Number(item.price || 0).toFixed(2)}</TableCell>
-                                  <TableCell align="right">₹{Number(item.subtotal || 0).toFixed(2)}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                            <Box sx={{ minWidth: 200 }}>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                                <Typography variant="body2">Subtotal:</Typography>
-                                <Typography variant="body2">₹{Number(order.subtotal || 0).toFixed(2)}</Typography>
-                              </Box>
-                              {order.discount > 0 && (
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                                  <Typography variant="body2" color="success.main">Discount:</Typography>
-                                  <Typography variant="body2" color="success.main">-₹{Number(order.discount || 0).toFixed(2)}</Typography>
-                                </Box>
+                            {expandedOrder === order.id ? (
+                              <KeyboardArrowUp />
+                            ) : (
+                              <KeyboardArrowDown />
+                            )}
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleViewReceipt(order)}
+                            color="primary"
+                          >
+                            <Receipt />
+                          </IconButton>
+                          {canCancelOrder(order) && !isRestrictedView && (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="error"
+                              startIcon={<Cancel />}
+                              onClick={() => handleCancelClick(order)}
+                              sx={{
+                                minWidth: '140px',
+                                fontSize: '0.75rem',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              Cancel (
+                              {formatCountdown(
+                                countdowns[order.id] ||
+                                  getTimeRemaining(order.createdAt),
                               )}
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                                <Typography variant="body2">Tax (5%):</Typography>
-                                <Typography variant="body2">₹{Number(order.tax || 0).toFixed(2)}</Typography>
-                              </Box>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1, borderTop: 1, borderColor: 'divider' }}>
-                                <Typography variant="subtitle1" fontWeight="bold">Total:</Typography>
-                                <Typography variant="subtitle1" fontWeight="bold" color="primary">
-                                  ₹{Number(order.total || 0).toFixed(2)}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </Box>
-                          {order.cancellationReason && (
-                            <Box sx={{ mt: 2, p: 1, backgroundColor: 'error.light', borderRadius: 1 }}>
-                              <Typography variant="body2" color="error.dark">
-                                <strong>Cancellation Reason:</strong> {order.cancellationReason}
-                              </Typography>
-                            </Box>
+                              )
+                            </Button>
                           )}
                         </Box>
-                      </Collapse>
-                    </TableCell>
-                  </TableRow>
-                </React.Fragment>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </Box>
-    </Paper>
-    
-    {/* Printer-friendly Receipt (Hidden from screen) */}
-    <Box sx={{ display: 'none', displayPrint: 'block' }}>
-      {selectedOrder && (
-        <div id="thermal-receipt" className="print-receipt">
-          <style>
-            {`
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell
+                        colSpan={8}
+                        sx={{ py: 0, borderBottom: 'none' }}
+                      >
+                        <Collapse
+                          in={expandedOrder === order.id}
+                          timeout="auto"
+                          unmountOnExit
+                        >
+                          <Box
+                            sx={{ p: 2, backgroundColor: 'background.default' }}
+                          >
+                            <Typography
+                              variant="subtitle2"
+                              fontWeight="bold"
+                              gutterBottom
+                            >
+                              Order Details
+                            </Typography>
+                            <Table size="small">
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell>Item</TableCell>
+                                  <TableCell align="center">Quantity</TableCell>
+                                  <TableCell align="right">Price</TableCell>
+                                  <TableCell align="right">Subtotal</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {order.items?.map((item, idx) => (
+                                  <TableRow key={idx}>
+                                    <TableCell>{item.menuItemName}</TableCell>
+                                    <TableCell align="center">
+                                      {item.quantity}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                      ₹{Number(item.price || 0).toFixed(2)}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                      ₹{Number(item.subtotal || 0).toFixed(2)}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                            <Box
+                              sx={{
+                                mt: 2,
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                              }}
+                            >
+                              <Box sx={{ minWidth: 200 }}>
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    mb: 0.5,
+                                  }}
+                                >
+                                  <Typography variant="body2">
+                                    Subtotal:
+                                  </Typography>
+                                  <Typography variant="body2">
+                                    ₹{Number(order.subtotal || 0).toFixed(2)}
+                                  </Typography>
+                                </Box>
+                                {order.discount > 0 && (
+                                  <Box
+                                    sx={{
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      mb: 0.5,
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="body2"
+                                      color="success.main"
+                                    >
+                                      Discount:
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      color="success.main"
+                                    >
+                                      -₹{Number(order.discount || 0).toFixed(2)}
+                                    </Typography>
+                                  </Box>
+                                )}
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    mb: 0.5,
+                                  }}
+                                >
+                                  <Typography variant="body2">
+                                    Tax (5%):
+                                  </Typography>
+                                  <Typography variant="body2">
+                                    ₹{Number(order.tax || 0).toFixed(2)}
+                                  </Typography>
+                                </Box>
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    pt: 1,
+                                    borderTop: 1,
+                                    borderColor: 'divider',
+                                  }}
+                                >
+                                  <Typography
+                                    variant="subtitle1"
+                                    fontWeight="bold"
+                                  >
+                                    Total:
+                                  </Typography>
+                                  <Typography
+                                    variant="subtitle1"
+                                    fontWeight="bold"
+                                    color="primary"
+                                  >
+                                    ₹{Number(order.total || 0).toFixed(2)}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Box>
+                            {order.cancellationReason && (
+                              <Box
+                                sx={{
+                                  mt: 2,
+                                  p: 1,
+                                  backgroundColor: 'error.light',
+                                  borderRadius: 1,
+                                }}
+                              >
+                                <Typography variant="body2" color="error.dark">
+                                  <strong>Cancellation Reason:</strong>{' '}
+                                  {order.cancellationReason}
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+                        </Collapse>
+                      </TableCell>
+                    </TableRow>
+                  </React.Fragment>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Box>
+      </Paper>
+
+      {/* Printer-friendly Receipt (Hidden from screen) */}
+      <Box sx={{ display: 'none', displayPrint: 'block' }}>
+        {selectedOrder && (
+          <div id="thermal-receipt" className="print-receipt">
+            <style>
+              {`
               @media print {
                 body * { visibility: hidden; }
                 #thermal-receipt, #thermal-receipt * { visibility: visible; }
@@ -523,87 +710,103 @@ const Orders = () => {
                 .receipt-footer { text-align: center; margin-top: 20px; font-size: 12px; }
               }
             `}
-          </style>
-          <div className="receipt-content">
-            <div className="receipt-header">
-              <h1 className="receipt-brand">CLOUD CAFE</h1>
-              <p>Management System</p>
-              <p>-------------------------</p>
-              <p>Order ID: {selectedOrder.id}</p>
-              <p>Date: {formatDate(selectedOrder.createdAt)}</p>
-              <p>Cashier: {selectedOrder.cashierName || 'N/A'}</p>
-            </div>
-            
-            <div className="receipt-items">
-              {selectedOrder.items?.map((item, idx) => (
-                <div key={idx} className="receipt-item">
-                  <div style={{ flex: 1 }}>
-                    <div>{item.menuItemName}</div>
-                    <small>{item.quantity} x ₹{Number(item.price || 0).toFixed(2)}</small>
-                  </div>
-                  <div style={{ fontWeight: 'bold' }}>₹{Number(item.subtotal || 0).toFixed(2)}</div>
-                </div>
-              ))}
-            </div>
+            </style>
+            <div className="receipt-content">
+              <div className="receipt-header">
+                <h1 className="receipt-brand">CLOUD CAFE</h1>
+                <p>Management System</p>
+                <p>-------------------------</p>
+                <p>Order ID: {selectedOrder.id}</p>
+                <p>Date: {formatDate(selectedOrder.createdAt)}</p>
+                <p>Cashier: {selectedOrder.cashierName || 'N/A'}</p>
+              </div>
 
-            <div className="receipt-totals">
-              <div className="total-row">
-                <span>Subtotal:</span>
-                <span>₹{Number(selectedOrder.subtotal || 0).toFixed(2)}</span>
-              </div>
-              {selectedOrder.discount > 0 && (
-                <div className="total-row">
-                  <span>Discount:</span>
-                  <span>-₹{Number(selectedOrder.discount || 0).toFixed(2)}</span>
-                </div>
-              )}
-              <div className="total-row">
-                <span>Tax (5%):</span>
-                <span>₹{Number(selectedOrder.tax || 0).toFixed(2)}</span>
-              </div>
-              {(() => {
-                const subtotal = Number(selectedOrder.subtotal || 0);
-                const discount = Number(selectedOrder.discount || 0);
-                const tax = Number(selectedOrder.tax || 0);
-                const total = Number(selectedOrder.total || 0);
-                const roundOff = total - (subtotal - discount + tax);
-                if (Math.abs(roundOff) > 0.001) {
-                  return (
-                    <div className="total-row">
-                      <span>Round Off:</span>
-                      <span>{roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}</span>
+              <div className="receipt-items">
+                {selectedOrder.items?.map((item, idx) => (
+                  <div key={idx} className="receipt-item">
+                    <div style={{ flex: 1 }}>
+                      <div>{item.menuItemName}</div>
+                      <small>
+                        {item.quantity} x ₹{Number(item.price || 0).toFixed(2)}
+                      </small>
                     </div>
-                  );
-                }
-                return null;
-              })()}
-              <div className="total-row grand-total">
-                <span>TOTAL AMOUNT:</span>
-                <span>₹{Number(selectedOrder.total || 0).toFixed(2)}</span>
+                    <div style={{ fontWeight: 'bold' }}>
+                      ₹{Number(item.subtotal || 0).toFixed(2)}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
 
-            <div className="receipt-footer">
-              <p>***************************</p>
-              <p>Thank you for choosing Cloud Cafe!</p>
-              <p>Payment: {selectedOrder.payment?.method || 'N/A'}</p>
-              <p>***************************</p>
+              <div className="receipt-totals">
+                <div className="total-row">
+                  <span>Subtotal:</span>
+                  <span>₹{Number(selectedOrder.subtotal || 0).toFixed(2)}</span>
+                </div>
+                {selectedOrder.discount > 0 && (
+                  <div className="total-row">
+                    <span>Discount:</span>
+                    <span>
+                      -₹{Number(selectedOrder.discount || 0).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                <div className="total-row">
+                  <span>Tax (5%):</span>
+                  <span>₹{Number(selectedOrder.tax || 0).toFixed(2)}</span>
+                </div>
+                {(() => {
+                  const subtotal = Number(selectedOrder.subtotal || 0);
+                  const discount = Number(selectedOrder.discount || 0);
+                  const tax = Number(selectedOrder.tax || 0);
+                  const total = Number(selectedOrder.total || 0);
+                  const roundOff = total - (subtotal - discount + tax);
+                  if (Math.abs(roundOff) > 0.001) {
+                    return (
+                      <div className="total-row">
+                        <span>Round Off:</span>
+                        <span>
+                          {roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}
+                        </span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+                <div className="total-row grand-total">
+                  <span>TOTAL AMOUNT:</span>
+                  <span>₹{Number(selectedOrder.total || 0).toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="receipt-footer">
+                <p>***************************</p>
+                <p>Thank you for choosing Cloud Cafe!</p>
+                <p>Payment: {selectedOrder.payment?.method || 'N/A'}</p>
+                <p>***************************</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </Box>
+        )}
+      </Box>
 
       {/* Receipt Dialog */}
-      <Dialog 
-        open={receiptOpen} 
-        onClose={() => setReceiptOpen(false)} 
-        maxWidth="sm" 
+      <Dialog
+        open={receiptOpen}
+        onClose={() => setReceiptOpen(false)}
+        maxWidth="sm"
         fullWidth
       >
         <DialogTitle>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">Receipt - Order #{selectedOrder?.id}</Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="h6">
+              Receipt - Order #{selectedOrder?.id}
+            </Typography>
             <Button
               startIcon={<Print />}
               onClick={handlePrintReceipt}
@@ -618,15 +821,15 @@ const Orders = () => {
           {selectedOrder && (
             <Box>
               <Box sx={{ mb: 2, textAlign: 'center' }}>
-                <Typography 
-                  variant="h5" 
-                  sx={{ 
-                    fontFamily: '"Cinzel", serif', 
-                    fontWeight: 800, 
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontFamily: '"Cinzel", serif',
+                    fontWeight: 800,
                     color: 'primary.main',
                     letterSpacing: '0.1em',
                     textTransform: 'uppercase',
-                    mb: 0.5
+                    mb: 0.5,
                   }}
                 >
                   Cloud Cafe
@@ -638,12 +841,29 @@ const Orders = () => {
                   {formatDate(selectedOrder.createdAt)}
                 </Typography>
               </Box>
-              
-              <Box sx={{ borderTop: 1, borderBottom: 1, borderColor: 'divider', py: 2, mb: 2 }}>
+
+              <Box
+                sx={{
+                  borderTop: 1,
+                  borderBottom: 1,
+                  borderColor: 'divider',
+                  py: 2,
+                  mb: 2,
+                }}
+              >
                 {selectedOrder.items?.map((item, idx) => (
-                  <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Box
+                    key={idx}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      mb: 1,
+                    }}
+                  >
                     <Box>
-                      <Typography variant="body1">{item.menuItemName}</Typography>
+                      <Typography variant="body1">
+                        {item.menuItemName}
+                      </Typography>
                       <Typography variant="body2" color="text.secondary">
                         {item.quantity} x ₹{Number(item.price || 0).toFixed(2)}
                       </Typography>
@@ -656,19 +876,45 @@ const Orders = () => {
               </Box>
 
               <Box sx={{ mb: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    mb: 0.5,
+                  }}
+                >
                   <Typography variant="body2">Subtotal:</Typography>
-                  <Typography variant="body2">₹{Number(selectedOrder.subtotal || 0).toFixed(2)}</Typography>
+                  <Typography variant="body2">
+                    ₹{Number(selectedOrder.subtotal || 0).toFixed(2)}
+                  </Typography>
                 </Box>
                 {selectedOrder.discount > 0 && (
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Typography variant="body2" color="success.main">Discount:</Typography>
-                    <Typography variant="body2" color="success.main">-₹{Number(selectedOrder.discount || 0).toFixed(2)}</Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      mb: 0.5,
+                    }}
+                  >
+                    <Typography variant="body2" color="success.main">
+                      Discount:
+                    </Typography>
+                    <Typography variant="body2" color="success.main">
+                      -₹{Number(selectedOrder.discount || 0).toFixed(2)}
+                    </Typography>
                   </Box>
                 )}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    mb: 0.5,
+                  }}
+                >
                   <Typography variant="body2">Tax (5%):</Typography>
-                  <Typography variant="body2">₹{Number(selectedOrder.tax || 0).toFixed(2)}</Typography>
+                  <Typography variant="body2">
+                    ₹{Number(selectedOrder.tax || 0).toFixed(2)}
+                  </Typography>
                 </Box>
                 {(() => {
                   const subtotal = Number(selectedOrder.subtotal || 0);
@@ -678,7 +924,13 @@ const Orders = () => {
                   const roundOff = total - (subtotal - discount + tax);
                   if (Math.abs(roundOff) > 0.001) {
                     return (
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          mb: 0.5,
+                        }}
+                      >
                         <Typography variant="body2">Round Off:</Typography>
                         <Typography variant="body2">
                           {roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}
@@ -688,26 +940,50 @@ const Orders = () => {
                   }
                   return null;
                 })()}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1, borderTop: 2, borderStyle: 'dashed', borderColor: 'divider', mt: 1 }}>
-                  <Typography variant="h6" fontWeight="bold">Final Amount:</Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    pt: 1,
+                    borderTop: 2,
+                    borderStyle: 'dashed',
+                    borderColor: 'divider',
+                    mt: 1,
+                  }}
+                >
+                  <Typography variant="h6" fontWeight="bold">
+                    Final Amount:
+                  </Typography>
                   <Typography variant="h6" fontWeight="900" color="primary">
                     ₹{Number(selectedOrder.total || 0).toFixed(2)}
                   </Typography>
                 </Box>
-                <Typography variant="caption" align="right" display="block" color="text.secondary" sx={{ mt: 0.5, fontStyle: 'italic' }}>
+                <Typography
+                  variant="caption"
+                  align="right"
+                  display="block"
+                  color="text.secondary"
+                  sx={{ mt: 0.5, fontStyle: 'italic' }}
+                >
                   (Rounded to nearest Rupee)
                 </Typography>
               </Box>
 
               <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 2 }}>
                 <Typography variant="body2">
-                  <strong>Payment Method:</strong> {selectedOrder.payment?.method || 'N/A'}
+                  <strong>Payment Method:</strong>{' '}
+                  {selectedOrder.payment?.method || 'N/A'}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 1 }}
+                >
                   <strong>Cashier:</strong> {selectedOrder.cashierName || 'N/A'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  <strong>Status:</strong> {selectedOrder.status.replace('_', ' ')}
+                  <strong>Status:</strong>{' '}
+                  {selectedOrder.status.replace('_', ' ')}
                 </Typography>
               </Box>
             </Box>
@@ -719,67 +995,74 @@ const Orders = () => {
       </Dialog>
 
       {/* Cancel Order Dialog */}
-      <Dialog 
-        open={cancelDialogOpen} 
+      <Dialog
+        open={cancelDialogOpen}
         onClose={() => {
           setCancelDialogOpen(false);
           setCancelReason('');
           setOrderToCancel(null);
-        }} 
-        maxWidth="sm" 
+        }}
+        maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>
-          Cancel Order #{orderToCancel?.id}
-        </DialogTitle>
+        <DialogTitle>Cancel Order #{orderToCancel?.id}</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 1 }}>
-            {orderToCancel && (() => {
-              const timeRemaining = countdowns[orderToCancel.id] || getTimeRemaining(orderToCancel.createdAt);
-              const canStillCancel = canCancelOrder(orderToCancel);
-              return (
-                <>
-                  <Typography 
-                    variant="body2" 
-                    color={canStillCancel ? "text.secondary" : "error.main"} 
-                    gutterBottom
-                    sx={{ mb: 2 }}
-                  >
-                    {canStillCancel 
-                      ? `You have ${formatCountdown(timeRemaining)} remaining to cancel this order.`
-                      : 'The cancellation window has expired. This order can no longer be cancelled.'}
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Cancellation Reason"
-                    multiline
-                    rows={4}
-                    value={cancelReason}
-                    onChange={(e) => setCancelReason(e.target.value)}
-                    margin="normal"
-                    required
-                    disabled={!canStillCancel}
-                    placeholder="Please provide a reason for cancellation..."
-                    helperText="This reason will be recorded with the order"
-                  />
-                </>
-              );
-            })()}
+            {orderToCancel &&
+              (() => {
+                const timeRemaining =
+                  countdowns[orderToCancel.id] ||
+                  getTimeRemaining(orderToCancel.createdAt);
+                const canStillCancel = canCancelOrder(orderToCancel);
+                return (
+                  <>
+                    <Typography
+                      variant="body2"
+                      color={canStillCancel ? 'text.secondary' : 'error.main'}
+                      gutterBottom
+                      sx={{ mb: 2 }}
+                    >
+                      {canStillCancel
+                        ? `You have ${formatCountdown(timeRemaining)} remaining to cancel this order.`
+                        : 'The cancellation window has expired. This order can no longer be cancelled.'}
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      label="Cancellation Reason"
+                      multiline
+                      rows={4}
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      margin="normal"
+                      required
+                      disabled={!canStillCancel}
+                      placeholder="Please provide a reason for cancellation..."
+                      helperText="This reason will be recorded with the order"
+                    />
+                  </>
+                );
+              })()}
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {
-            setCancelDialogOpen(false);
-            setCancelReason('');
-            setOrderToCancel(null);
-          }}>
+          <Button
+            onClick={() => {
+              setCancelDialogOpen(false);
+              setCancelReason('');
+              setOrderToCancel(null);
+            }}
+          >
             Keep Order
           </Button>
-          <Button 
-            onClick={handleCancelOrder} 
-            variant="contained" 
+          <Button
+            onClick={handleCancelOrder}
+            variant="contained"
             color="error"
-            disabled={!cancelReason.trim() || !orderToCancel || !canCancelOrder(orderToCancel)}
+            disabled={
+              !cancelReason.trim() ||
+              !orderToCancel ||
+              !canCancelOrder(orderToCancel)
+            }
           >
             Cancel Order
           </Button>
@@ -793,8 +1076,8 @@ const Orders = () => {
         onClose={handleCloseToast}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={handleCloseToast} 
+        <Alert
+          onClose={handleCloseToast}
           severity={toast.type || 'info'}
           variant="filled"
           sx={{ width: '100%' }}
@@ -807,4 +1090,3 @@ const Orders = () => {
 };
 
 export default Orders;
-

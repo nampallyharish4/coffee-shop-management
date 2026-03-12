@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   Grid,
   Card,
-  CardContent,
   Typography,
   CardActionArea,
   Box,
@@ -24,7 +23,6 @@ import {
   DialogActions,
   TextField,
   Alert,
-  Divider,
   useTheme,
   Stack,
 } from '@mui/material';
@@ -49,7 +47,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import Layout from '../components/Layout';

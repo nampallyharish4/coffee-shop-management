@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Grid,
   Card,
@@ -56,36 +56,7 @@ const BaristaView = () => {
   // Initialize with selected tune
   const notificationSound = React.useRef(new Audio(selectedTuneUrl));
 
-  useEffect(() => {
-    // Load preference from localStorage
-    const savedTune = localStorage.getItem('baristaNotificationTune');
-    if (savedTune) {
-      setSelectedTuneUrl(savedTune);
-    }
-
-    const savedSoundEnabled = localStorage.getItem('baristaSoundEnabled');
-    if (savedSoundEnabled !== null) {
-      setIsSoundEnabled(savedSoundEnabled === 'true');
-    } else {
-      setIsSoundEnabled(true);
-    }
-
-    loadOrders();
-    const interval = setInterval(loadOrders, 10000);
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
-
-  // Update audio source when selectedTuneUrl changes
-  useEffect(() => {
-    notificationSound.current = new Audio(selectedTuneUrl);
-    notificationSound.current.volume = 1.0;
-    notificationSound.current.load();
-    localStorage.setItem('baristaNotificationTune', selectedTuneUrl);
-  }, [selectedTuneUrl]);
-
-  const playNotification = () => {
+  const playNotification = useCallback(() => {
     if (isSoundEnabled) {
       notificationSound.current.currentTime = 0;
       notificationSound.current.play().catch((err) => {
@@ -104,9 +75,31 @@ const BaristaView = () => {
         severity: 'info',
       });
     }
-  };
+  }, [isSoundEnabled, snackbar.open, snackbar.severity]);
 
-  const loadOrders = async () => {
+  const getTimeRemaining = useCallback((createdAt) => {
+    if (!createdAt) return 0;
+    const created = new Date(createdAt);
+    const now = new Date();
+    const elapsed = (now - created) / 1000;
+    const cancelWindow = 45;
+    const remaining = Math.max(0, cancelWindow - elapsed);
+    return Math.floor(remaining);
+  }, []);
+
+  const shouldShowOrder = useCallback(
+    (order) => {
+      // If status is CREATED, only show if timer has expired
+      if (order.status === 'CREATED') {
+        return getTimeRemaining(order.createdAt) === 0;
+      }
+      // Always show strict PREPARATION or READY orders
+      return true;
+    },
+    [getTimeRemaining],
+  );
+
+  const loadOrders = useCallback(async () => {
     try {
       const response = await orderService.getAll();
       const allOrders = response.data.data;
@@ -135,26 +128,36 @@ const BaristaView = () => {
     } catch (error) {
       console.error('Failed to load orders:', error);
     }
-  };
+  }, [playNotification, shouldShowOrder]);
 
-  const getTimeRemaining = (createdAt) => {
-    if (!createdAt) return 0;
-    const created = new Date(createdAt);
-    const now = new Date();
-    const elapsed = (now - created) / 1000;
-    const cancelWindow = 45;
-    const remaining = Math.max(0, cancelWindow - elapsed);
-    return Math.floor(remaining);
-  };
-
-  const shouldShowOrder = (order) => {
-    // If status is CREATED, only show if timer has expired
-    if (order.status === 'CREATED') {
-      return getTimeRemaining(order.createdAt) === 0;
+  useEffect(() => {
+    // Load preference from localStorage
+    const savedTune = localStorage.getItem('baristaNotificationTune');
+    if (savedTune) {
+      setSelectedTuneUrl(savedTune);
     }
-    // Always show strict PREPARATION or READY orders
-    return true;
-  };
+
+    const savedSoundEnabled = localStorage.getItem('baristaSoundEnabled');
+    if (savedSoundEnabled !== null) {
+      setIsSoundEnabled(savedSoundEnabled === 'true');
+    } else {
+      setIsSoundEnabled(true);
+    }
+
+    loadOrders();
+    const interval = setInterval(loadOrders, 10000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [loadOrders]);
+
+  // Update audio source when selectedTuneUrl changes
+  useEffect(() => {
+    notificationSound.current = new Audio(selectedTuneUrl);
+    notificationSound.current.volume = 1.0;
+    notificationSound.current.load();
+    localStorage.setItem('baristaNotificationTune', selectedTuneUrl);
+  }, [selectedTuneUrl]);
 
   const updateStatus = async (orderId, newStatus) => {
     try {
