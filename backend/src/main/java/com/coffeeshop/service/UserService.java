@@ -42,6 +42,10 @@ public class UserService {
 
     @Transactional
     public UserDTO createUser(UserDTO userDTO) {
+        if (userRepository.existsByEmail(userDTO.getEmail())) {
+            throw new IllegalStateException("A user with this email already exists");
+        }
+
         User user = new User();
         user.setName(userDTO.getName());
         user.setEmail(userDTO.getEmail());

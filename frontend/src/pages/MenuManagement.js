@@ -1,13 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Button, Table, TableBody, TableCell, TableHead, TableRow, Paper,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select,
-  MenuItem, FormControl, InputLabel, Switch, FormControlLabel, Snackbar, Alert, Box,
-  Autocomplete, IconButton, Typography, Grid
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Switch,
+  FormControlLabel,
+  Snackbar,
+  Alert,
+  Box,
+  Autocomplete,
+  IconButton,
+  Typography,
+  Grid,
 } from '@mui/material';
 import { Delete, Add } from '@mui/icons-material';
 import Layout from '../components/Layout';
-import { menuService, categoryService, inventoryService } from '../services/api';
+import {
+  menuService,
+  categoryService,
+  inventoryService,
+} from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const MenuManagement = () => {
@@ -17,23 +42,37 @@ const MenuManagement = () => {
   const [inventoryItems, setInventoryItems] = useState([]);
   const [open, setOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
   const [formData, setFormData] = useState({
-    name: '', categoryId: '', price: '', description: '', imageUrl: '', active: true, ingredients: []
+    name: '',
+    categoryId: '',
+    price: '',
+    description: '',
+    imageUrl: '',
+    active: true,
+    ingredients: [],
   });
   // State for new ingredient input in dialog
-  const [newIngredient, setNewIngredient] = useState({ inventoryItem: null, quantity: '' });
+  const [newIngredient, setNewIngredient] = useState({
+    inventoryItem: null,
+    quantity: '',
+  });
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [deleteConfirmation, setDeleteConfirmation] = useState({ open: false, id: null });
+  const [deleteConfirmation, setDeleteConfirmation] = useState({
+    open: false,
+    id: null,
+  });
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
-
-
 
   const loadData = async () => {
     const [menuRes, catRes, invRes] = await Promise.all([
       menuService.getAll(),
       categoryService.getAll(),
-      inventoryService.getAll()
+      inventoryService.getAll(),
     ]);
     setItems(menuRes.data.data);
     setCategories(catRes.data.data);
@@ -51,7 +90,7 @@ const MenuManagement = () => {
         setSnackbar({
           open: true,
           message: 'Please fill in all required fields (Name, Category, Price)',
-          severity: 'error'
+          severity: 'error',
         });
         return;
       }
@@ -60,33 +99,34 @@ const MenuManagement = () => {
       const dataToSend = {
         ...formData,
         categoryId: Number(formData.categoryId),
-        price: Number(formData.price)
+        price: Number(formData.price),
       };
 
       // Check for duplicate name (case-insensitive)
-      const isDuplicate = items.some(item => 
-        item.name.toLowerCase() === dataToSend.name.toLowerCase() && 
-        item.id !== (editItem ? editItem.id : null)
+      const isDuplicate = items.some(
+        (item) =>
+          item.name.toLowerCase() === dataToSend.name.toLowerCase() &&
+          item.id !== (editItem ? editItem.id : null),
       );
 
       if (isDuplicate) {
         setDuplicateDialogOpen(true);
         return;
       }
-      
+
       if (editItem) {
         await menuService.update(editItem.id, dataToSend);
         setSnackbar({
           open: true,
           message: 'Menu item updated successfully!',
-          severity: 'success'
+          severity: 'success',
         });
       } else {
         await menuService.create(dataToSend);
         setSnackbar({
           open: true,
           message: 'Menu item created successfully!',
-          severity: 'success'
+          severity: 'success',
         });
       }
       setOpen(false);
@@ -94,13 +134,14 @@ const MenuManagement = () => {
       resetForm();
     } catch (error) {
       console.error('Failed to save menu item:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.data || 
-                          'Failed to save menu item. Please check all fields and try again.';
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.data ||
+        'Failed to save menu item. Please check all fields and try again.';
       setSnackbar({
         open: true,
         message: errorMessage,
-        severity: 'error'
+        severity: 'error',
       });
     }
   };
@@ -118,15 +159,17 @@ const MenuManagement = () => {
       setSnackbar({
         open: true,
         message: 'Menu item deleted successfully!',
-        severity: 'success'
+        severity: 'success',
       });
       loadData();
     } catch (error) {
       console.error('Failed to delete menu item:', error);
       setSnackbar({
         open: true,
-        message: error.response?.data?.message || 'Failed to delete menu item. Please try again.',
-        severity: 'error'
+        message:
+          error.response?.data?.message ||
+          'Failed to delete menu item. Please try again.',
+        severity: 'error',
       });
     } finally {
       setDeleteConfirmation({ open: false, id: null });
@@ -141,7 +184,15 @@ const MenuManagement = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', categoryId: '', price: '', description: '', imageUrl: '', active: true, ingredients: [] });
+    setFormData({
+      name: '',
+      categoryId: '',
+      price: '',
+      description: '',
+      imageUrl: '',
+      active: true,
+      ingredients: [],
+    });
     setNewIngredient({ inventoryItem: null, quantity: '' });
     setEditItem(null);
   };
@@ -157,12 +208,14 @@ const MenuManagement = () => {
         description: item.description || '',
         imageUrl: item.imageUrl || '',
         active: item.active !== undefined ? item.active : true,
-        ingredients: item.ingredients ? item.ingredients.map(ing => ({
-          inventoryItemId: ing.inventoryItemId,
-          inventoryItemName: ing.inventoryItemName,
-          quantityRequired: ing.quantityRequired,
-          unit: ing.unit
-        })) : []
+        ingredients: item.ingredients
+          ? item.ingredients.map((ing) => ({
+              inventoryItemId: ing.inventoryItemId,
+              inventoryItemName: ing.inventoryItemName,
+              quantityRequired: ing.quantityRequired,
+              unit: ing.unit,
+            }))
+          : [],
       });
     } else {
       resetForm();
@@ -179,38 +232,44 @@ const MenuManagement = () => {
     if (isNaN(qty) || qty <= 0) return;
 
     let ingredientToAdd = {};
-    
+
     // Check if it's an existing item object or a new string
-    if (typeof inventoryItem === 'string' || (inventoryItem && !inventoryItem.id)) {
-        // It's a new item name typed in
-        const name = typeof inventoryItem === 'string' ? inventoryItem : newIngredient.inputValue;
-        ingredientToAdd = {
-            inventoryItemId: null,
-            inventoryItemName: name,
-            quantityRequired: qty,
-            unit: 'unit' // Default for new items created here
-        };
+    if (
+      typeof inventoryItem === 'string' ||
+      (inventoryItem && !inventoryItem.id)
+    ) {
+      // It's a new item name typed in
+      const name =
+        typeof inventoryItem === 'string'
+          ? inventoryItem
+          : newIngredient.inputValue;
+      ingredientToAdd = {
+        inventoryItemId: null,
+        inventoryItemName: name,
+        quantityRequired: qty,
+        unit: 'unit', // Default for new items created here
+      };
     } else if (inventoryItem && inventoryItem.id) {
-        // Existing item selected
-        ingredientToAdd = {
-            inventoryItemId: inventoryItem.id,
-            inventoryItemName: inventoryItem.name,
-            quantityRequired: qty,
-            unit: inventoryItem.unit // Use existing unit from inventory
-        };
+      // Existing item selected
+      ingredientToAdd = {
+        inventoryItemId: inventoryItem.id,
+        inventoryItemName: inventoryItem.name,
+        quantityRequired: qty,
+        unit: inventoryItem.unit, // Use existing unit from inventory
+      };
     } else {
-        // Fallback for typed value if inventoryItem is null but inputValue exists (Autocomplete behavior)
-         ingredientToAdd = {
-            inventoryItemId: null,
-            inventoryItemName: newIngredient.inputValue,
-            quantityRequired: qty,
-            unit: 'unit'
-        };
+      // Fallback for typed value if inventoryItem is null but inputValue exists (Autocomplete behavior)
+      ingredientToAdd = {
+        inventoryItemId: null,
+        inventoryItemName: newIngredient.inputValue,
+        quantityRequired: qty,
+        unit: 'unit',
+      };
     }
 
     setFormData({
       ...formData,
-      ingredients: [...formData.ingredients, ingredientToAdd]
+      ingredients: [...formData.ingredients, ingredientToAdd],
     });
     setNewIngredient({ inventoryItem: null, quantity: '' });
   };
@@ -229,8 +288,8 @@ const MenuManagement = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
+        <Alert
+          onClose={handleCloseSnackbar}
           severity={snackbar.severity}
           variant="filled"
           sx={{ width: '100%' }}
@@ -239,20 +298,28 @@ const MenuManagement = () => {
         </Alert>
       </Snackbar>
 
-      <Box sx={{ 
-        mb: 4, 
-        display: 'flex', 
-        flexDirection: { xs: 'column', sm: 'row' }, 
-        justifyContent: 'space-between', 
-        alignItems: { xs: 'stretch', sm: 'center' },
-        gap: 2 
-      }}>
+      <Box
+        sx={{
+          mb: 4,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: 2,
+        }}
+      >
         {hasRole('ROLE_ADMIN') ? (
-          <Button variant="contained" onClick={() => openDialog()} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <Button
+            variant="contained"
+            onClick={() => openDialog()}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
             Add Menu Item
           </Button>
-        ) : <Box />}
-        
+        ) : (
+          <Box />
+        )}
+
         <FormControl sx={{ minWidth: { xs: '100%', sm: 200 } }} size="small">
           <InputLabel>Filter by Category</InputLabel>
           <Select
@@ -261,14 +328,25 @@ const MenuManagement = () => {
             onChange={(e) => setSelectedCategory(e.target.value)}
           >
             <MenuItem value="ALL">All Categories</MenuItem>
-            {categories.map(cat => (
-              <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+            {categories.map((cat) => (
+              <MenuItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>
       </Box>
-      
-      <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: '12px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+
+      <Paper
+        sx={{
+          width: '100%',
+          overflow: 'hidden',
+          borderRadius: '12px',
+          border: '1px solid',
+          borderColor: 'divider',
+          boxShadow: 'none',
+        }}
+      >
         <Box sx={{ overflowX: 'auto' }}>
           <Table stickyHeader>
             <TableHead>
@@ -279,46 +357,58 @@ const MenuManagement = () => {
                 <TableCell sx={{ minWidth: 100 }}>Price</TableCell>
                 <TableCell sx={{ minWidth: 80 }}>Active</TableCell>
                 {/* Only show Actions column to admins */}
-                {hasRole('ROLE_ADMIN') && <TableCell sx={{ minWidth: 150 }}>Actions</TableCell>}
-              </TableRow>
-            </TableHead>
-          <TableBody>
-            {items
-              .filter(item => selectedCategory === 'ALL' || item.categoryId === selectedCategory || item.category?.id === selectedCategory)
-              .map(item => (
-              <TableRow key={item.id}>
-                <TableCell>
-                  {item.imageUrl && (
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      style={{
-                        width: '60px',
-                        height: '60px',
-                        objectFit: 'cover',
-                        borderRadius: '8px'
-                      }}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  )}
-                </TableCell>
-                <TableCell>{item.name}</TableCell>
-                <TableCell>{item.categoryName}</TableCell>
-                <TableCell>₹{item.price}</TableCell>
-                <TableCell>{item.active ? 'Yes' : 'No'}</TableCell>
-                {/* Only show Edit/Delete buttons to admins */}
                 {hasRole('ROLE_ADMIN') && (
-                  <TableCell>
-                    <Button onClick={() => openDialog(item)}>Edit</Button>
-                    <Button onClick={() => handleDeleteClick(item.id)} color="error">Delete</Button>
-                  </TableCell>
+                  <TableCell sx={{ minWidth: 150 }}>Actions</TableCell>
                 )}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+            <TableBody>
+              {items
+                .filter(
+                  (item) =>
+                    selectedCategory === 'ALL' ||
+                    item.categoryId === selectedCategory ||
+                    item.category?.id === selectedCategory,
+                )
+                .map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      {item.imageUrl && (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          style={{
+                            width: '60px',
+                            height: '60px',
+                            objectFit: 'cover',
+                            borderRadius: '8px',
+                          }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell>{item.categoryName}</TableCell>
+                    <TableCell>₹{item.price}</TableCell>
+                    <TableCell>{item.active ? 'Yes' : 'No'}</TableCell>
+                    {/* Only show Edit/Delete buttons to admins */}
+                    {hasRole('ROLE_ADMIN') && (
+                      <TableCell>
+                        <Button onClick={() => openDialog(item)}>Edit</Button>
+                        <Button
+                          onClick={() => handleDeleteClick(item.id)}
+                          color="error"
+                        >
+                          Delete
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
         </Box>
       </Paper>
 
@@ -333,10 +423,16 @@ const MenuManagement = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteConfirmation({ open: false, id: null })}>
+          <Button
+            onClick={() => setDeleteConfirmation({ open: false, id: null })}
+          >
             Cancel
           </Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained">
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+          >
             Delete
           </Button>
         </DialogActions>
@@ -344,24 +440,36 @@ const MenuManagement = () => {
 
       {/* Only show dialog to admins */}
       {hasRole('ROLE_ADMIN') && (
-        <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+        <Dialog
+          open={open}
+          onClose={() => setOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
           <DialogTitle>{editItem ? 'Edit' : 'Add'} Menu Item</DialogTitle>
           <DialogContent>
             <TextField
               fullWidth
               label="Name"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               margin="normal"
             />
             <FormControl fullWidth margin="normal">
               <InputLabel>Category</InputLabel>
               <Select
                 value={formData.categoryId}
-                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                label="Category"
+                onChange={(e) =>
+                  setFormData({ ...formData, categoryId: e.target.value })
+                }
               >
-                {categories.map(cat => (
-                  <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+                {categories.map((cat) => (
+                  <MenuItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -370,7 +478,9 @@ const MenuManagement = () => {
               label="Price"
               type="number"
               value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, price: e.target.value })
+              }
               margin="normal"
             />
             <TextField
@@ -379,46 +489,65 @@ const MenuManagement = () => {
               multiline
               rows={3}
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               margin="normal"
             />
             <TextField
               fullWidth
               label="Image URL"
               value={formData.imageUrl}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, imageUrl: e.target.value })
+              }
               margin="normal"
             />
             <FormControlLabel
               control={
                 <Switch
                   checked={formData.active}
-                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, active: e.target.checked })
+                  }
                 />
               }
               label="Active"
             />
-            
+
             <Box sx={{ mt: 3 }}>
-              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Ingredients</Typography>
-              
+              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                Ingredients
+              </Typography>
+
               <Grid container spacing={2} sx={{ mb: 2 }}>
                 <Grid item xs={7}>
                   <Autocomplete
                     freeSolo
                     options={inventoryItems}
-                    getOptionLabel={(option) => typeof option === 'string' ? option : option.name}
+                    getOptionLabel={(option) =>
+                      typeof option === 'string' ? option : option.name
+                    }
                     value={newIngredient.inventoryItem}
                     onChange={(event, newValue) => {
-                      setNewIngredient({ 
-                          ...newIngredient, 
-                          inventoryItem: newValue
+                      setNewIngredient({
+                        ...newIngredient,
+                        inventoryItem: newValue,
                       });
                     }}
                     onInputChange={(event, newInputValue) => {
-                      setNewIngredient({ ...newIngredient, inputValue: newInputValue });
+                      setNewIngredient({
+                        ...newIngredient,
+                        inputValue: newInputValue,
+                      });
                     }}
-                    renderInput={(params) => <TextField {...params} label="Select or Type Ingredient" size="small" />}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select or Type Ingredient"
+                        size="small"
+                      />
+                    )}
                   />
                 </Grid>
                 <Grid item xs={3}>
@@ -428,31 +557,42 @@ const MenuManagement = () => {
                     type="number"
                     size="small"
                     value={newIngredient.quantity}
-                    onChange={(e) => setNewIngredient({ ...newIngredient, quantity: e.target.value })}
+                    onChange={(e) =>
+                      setNewIngredient({
+                        ...newIngredient,
+                        quantity: e.target.value,
+                      })
+                    }
                     // Show unit as suffix if item selected
-                     InputProps={{
+                    InputProps={{
                       endAdornment: newIngredient.inventoryItem?.unit ? (
-                        <Typography variant="caption" sx={{ ml: 1, whiteSpace: 'nowrap' }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ ml: 1, whiteSpace: 'nowrap' }}
+                        >
                           {newIngredient.inventoryItem.unit}
                         </Typography>
-                      ) : null
+                      ) : null,
                     }}
                   />
                 </Grid>
                 <Grid item xs={2}>
-                   <Button 
-                    variant="contained" 
+                  <Button
+                    variant="contained"
                     onClick={handleAddIngredient}
-                    fullWidth 
+                    fullWidth
                     sx={{ height: '100%' }}
-                   >
-                     <Add />
-                   </Button>
+                  >
+                    <Add />
+                  </Button>
                 </Grid>
               </Grid>
 
               {formData.ingredients.length > 0 && (
-                <Paper variant="outlined" sx={{ maxHeight: 150, overflow: 'auto' }}>
+                <Paper
+                  variant="outlined"
+                  sx={{ maxHeight: 150, overflow: 'auto' }}
+                >
                   <Table size="small" stickyHeader>
                     <TableHead>
                       <TableRow>
@@ -463,18 +603,26 @@ const MenuManagement = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                        {formData.ingredients.map((ing, idx) => (
-                            <TableRow key={idx}>
-                                <TableCell>{ing.inventoryItemName}</TableCell>
-                                <TableCell align="right">{ing.quantityRequired}</TableCell>
-                                <TableCell align="center">{ing.unit || 'unit'}</TableCell>
-                                <TableCell align="center">
-                                    <IconButton size="small" color="error" onClick={() => handleRemoveIngredient(idx)}>
-                                        <Delete fontSize="small" />
-                                    </IconButton>
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                      {formData.ingredients.map((ing, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>{ing.inventoryItemName}</TableCell>
+                          <TableCell align="right">
+                            {ing.quantityRequired}
+                          </TableCell>
+                          <TableCell align="center">
+                            {ing.unit || 'unit'}
+                          </TableCell>
+                          <TableCell align="center">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleRemoveIngredient(idx)}
+                            >
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 </Paper>
@@ -483,21 +631,42 @@ const MenuManagement = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} variant="contained">Save</Button>
+            <Button onClick={handleSave} variant="contained">
+              Save
+            </Button>
           </DialogActions>
         </Dialog>
       )}
 
-      <Dialog open={duplicateDialogOpen} onClose={() => setDuplicateDialogOpen(false)}>
-        <DialogTitle sx={{ color: 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Dialog
+        open={duplicateDialogOpen}
+        onClose={() => setDuplicateDialogOpen(false)}
+      >
+        <DialogTitle
+          sx={{
+            color: 'warning.main',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
           <span style={{ fontSize: '1.5rem' }}>⚠️</span> Duplicate Item
         </DialogTitle>
         <DialogContent>
-          <p>A menu item with the name <strong>"{formData.name}"</strong> already exists.</p>
+          <p>
+            A menu item with the name <strong>"{formData.name}"</strong> already
+            exists.
+          </p>
           <p>Please use a different name or edit the existing item.</p>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDuplicateDialogOpen(false)} variant="contained" color="primary">OK</Button>
+          <Button
+            onClick={() => setDuplicateDialogOpen(false)}
+            variant="contained"
+            color="primary"
+          >
+            OK
+          </Button>
         </DialogActions>
       </Dialog>
     </Layout>

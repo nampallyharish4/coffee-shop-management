@@ -146,6 +146,12 @@ public class OrderService {
         if (order.getStatus() == Order.OrderStatus.CANCELLED) {
              throw new IllegalStateException("Order is already cancelled");
         }
+        if (order.getStatus() == Order.OrderStatus.COMPLETED) {
+             throw new IllegalStateException("Cannot cancel a completed order");
+        }
+        if (order.getStatus() == Order.OrderStatus.READY) {
+             throw new IllegalStateException("Cannot cancel an order that is ready for pickup");
+        }
 
         order.setStatus(Order.OrderStatus.CANCELLED);
         order.setCancellationReason(reason);

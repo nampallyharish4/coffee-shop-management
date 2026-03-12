@@ -93,9 +93,11 @@ public class AnalyticsService {
             
             stats.put("userId", cashierId);
             stats.put("userName", order.getCashier().getName());
+            stats.putIfAbsent("orderCount", 0L);
+            stats.putIfAbsent("totalRevenue", BigDecimal.ZERO);
             if (order.getStatus() == Order.OrderStatus.COMPLETED) {
-                stats.put("orderCount", ((Long) stats.getOrDefault("orderCount", 0L)) + 1);
-                BigDecimal revenue = (BigDecimal) stats.getOrDefault("totalRevenue", BigDecimal.ZERO);
+                stats.put("orderCount", ((Long) stats.get("orderCount")) + 1);
+                BigDecimal revenue = (BigDecimal) stats.get("totalRevenue");
                 stats.put("totalRevenue", revenue.add(order.getTotal()));
             }
         }
