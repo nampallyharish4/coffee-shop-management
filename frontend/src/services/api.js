@@ -12,6 +12,14 @@ const api = axios.create({
   },
 });
 
+const noCacheConfig = {
+  headers: {
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    Pragma: 'no-cache',
+    Expires: '0',
+  },
+};
+
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -53,8 +61,8 @@ export const userService = {
 };
 
 export const menuService = {
-  getAll: () => api.get('/menu'),
-  getActive: () => api.get('/menu/active'),
+  getAll: () => api.get(`/menu?_ts=${Date.now()}`, noCacheConfig),
+  getActive: () => api.get(`/menu/active?_ts=${Date.now()}`, noCacheConfig),
   getById: (id) => api.get(`/menu/${id}`),
   create: (item) => api.post('/menu', item),
   update: (id, item) => api.put(`/menu/${id}`, item),
@@ -86,7 +94,7 @@ export const inventoryService = {
 };
 
 export const categoryService = {
-  getAll: () => api.get('/categories'),
+  getAll: () => api.get(`/categories?_ts=${Date.now()}`, noCacheConfig),
 };
 
 export const analyticsService = {
