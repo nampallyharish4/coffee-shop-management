@@ -1,7 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 
-  (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8081/api');
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? '/api'
+    : 'http://localhost:8081/api');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -24,7 +27,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const requestUrl = error.config?.url || '';
+    const isLoginRequest = requestUrl.includes('/auth/login');
+    const hasToken = !!localStorage.getItem('token');
+
+    // Keep users on login screen for bad credentials and avoid forced logout loops.
+    if (error.response?.status === 401 && hasToken && !isLoginRequest) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';

@@ -30,18 +30,21 @@ public class MenuService {
     @Autowired
     private InventoryItemRepository inventoryItemRepository;
 
+    @Transactional(readOnly = true)
     public List<MenuItemDTO> getAllMenuItems() {
         return menuItemRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<MenuItemDTO> getActiveMenuItems() {
         return menuItemRepository.findByActiveTrue().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public MenuItemDTO getMenuItemById(long id) {
         return menuItemRepository.findById(id)
                 .map(this::convertToDTO)
@@ -130,8 +133,10 @@ public class MenuService {
         MenuItemDTO dto = new MenuItemDTO();
         dto.setId(menuItem.getId());
         dto.setName(menuItem.getName());
-        dto.setCategoryId(menuItem.getCategory().getId());
-        dto.setCategoryName(menuItem.getCategory().getName());
+        if (menuItem.getCategory() != null) {
+            dto.setCategoryId(menuItem.getCategory().getId());
+            dto.setCategoryName(menuItem.getCategory().getName());
+        }
         dto.setPrice(menuItem.getPrice());
         dto.setDescription(menuItem.getDescription());
         dto.setImageUrl(menuItem.getImageUrl());
@@ -139,6 +144,7 @@ public class MenuService {
 
         if (menuItem.getIngredients() != null) {
             List<MenuItemDTO.IngredientDTO> ingredients = menuItem.getIngredients().stream()
+                    .filter(ing -> ing != null && ing.getInventoryItem() != null)
                     .map(ing -> {
                         MenuItemDTO.IngredientDTO ingDTO = new MenuItemDTO.IngredientDTO();
                         ingDTO.setInventoryItemId(ing.getInventoryItem().getId());
