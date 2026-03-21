@@ -252,14 +252,10 @@ const Layout = ({ children, title, headerContent }) => {
         position="fixed"
         sx={{
           width: {
-            md:
-              hasRole('ROLE_ADMIN') || !isSidebarOpen
-                ? '100%'
-                : `calc(100% - ${drawerWidth}px)`,
+            md: isSidebarOpen ? `calc(100% - ${drawerWidth}px)` : '100%',
           },
           ml: {
-            md:
-              hasRole('ROLE_ADMIN') || !isSidebarOpen ? 0 : `${drawerWidth}px`,
+            md: isSidebarOpen ? `${drawerWidth}px` : 0,
           },
           bgcolor: 'background.paper',
           color: 'text.primary',
@@ -284,8 +280,7 @@ const Layout = ({ children, title, headerContent }) => {
                 mr: 2,
                 display: {
                   xs: 'block',
-                  md:
-                    hasRole('ROLE_ADMIN') || !isSidebarOpen ? 'block' : 'none',
+                  md: isSidebarOpen ? 'none' : 'block',
                 },
               }}
             >
@@ -369,10 +364,8 @@ const Layout = ({ children, title, headerContent }) => {
       <Box
         component="nav"
         sx={{
-          width: {
-            md: hasRole('ROLE_ADMIN') || !isSidebarOpen ? 0 : drawerWidth,
-          },
-          flexShrink: { md: hasRole('ROLE_ADMIN') || !isSidebarOpen ? 0 : 1 },
+          width: { md: isSidebarOpen ? drawerWidth : 0 },
+          flexShrink: { md: isSidebarOpen ? 0 : 1 },
         }}
       >
         <Drawer
@@ -381,10 +374,7 @@ const Layout = ({ children, title, headerContent }) => {
           onClose={handleDrawerToggle}
           ModalProps={{ keepMounted: true }}
           sx={{
-            display: {
-              xs: 'block',
-              md: hasRole('ROLE_ADMIN') ? 'block' : 'none',
-            },
+            display: { xs: 'block', md: 'none' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
@@ -395,24 +385,22 @@ const Layout = ({ children, title, headerContent }) => {
         >
           {drawer}
         </Drawer>
-        {!hasRole('ROLE_ADMIN') && (
-          <Drawer
-            variant="persistent"
-            sx={{
-              display: { xs: 'none', md: 'block' },
-              '& .MuiDrawer-paper': {
-                boxSizing: 'border-box',
-                width: drawerWidth,
-                borderRight: '1px solid',
-                borderColor: 'divider',
-                backgroundColor: 'background.paper',
-              },
-            }}
-            open={isSidebarOpen}
-          >
-            {drawer}
-          </Drawer>
-        )}
+        <Drawer
+          variant="persistent"
+          sx={{
+            display: { xs: 'none', md: 'block' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidth,
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              backgroundColor: 'background.paper',
+            },
+          }}
+          open={isSidebarOpen}
+        >
+          {drawer}
+        </Drawer>
       </Box>
 
       <Box
@@ -421,10 +409,7 @@ const Layout = ({ children, title, headerContent }) => {
           flexGrow: 1,
           p: { xs: 2, sm: 3, md: 4 },
           width: {
-            md:
-              hasRole('ROLE_ADMIN') || !isSidebarOpen
-                ? '100%'
-                : `calc(100% - ${drawerWidth}px)`,
+            md: isSidebarOpen ? `calc(100% - ${drawerWidth}px)` : '100%',
           },
           mt: '70px',
           minHeight: 'calc(100vh - 70px)',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Grid,
@@ -25,6 +25,8 @@ import {
   Alert,
   useTheme,
   Stack,
+  Skeleton,
+  CircularProgress,
 } from '@mui/material';
 import {
   ShoppingCart,
@@ -76,8 +78,11 @@ const Dashboard = () => {
     message: '',
     severity: 'success',
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isActing, setIsActing] = useState(false);
 
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
+    setIsLoading(true);
     try {
       const [sales, items, staff, usage] = await Promise.all([
         analyticsService.getSales(range),
@@ -97,15 +102,17 @@ const Dashboard = () => {
       setInventoryUsage(usage.data.data || []);
     } catch (error) {
       console.error('Failed to load analytics:', error);
+      setAlert({ open: true, message: 'Failed to load analytics data. Please try again.', severity: 'error' });
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [range]);
 
   useEffect(() => {
     if (hasRole('ROLE_ADMIN')) {
       loadAnalytics();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range]);
+  }, [range, loadAnalytics, hasRole]);
 
   const handleAction = async () => {
     const requiredText =
@@ -119,6 +126,7 @@ const Dashboard = () => {
       return;
     }
 
+    setIsActing(true);
     try {
       if (dialogType === 'RESET_REVENUE') {
         await orderService.resetRevenue();
@@ -140,6 +148,8 @@ const Dashboard = () => {
         message: error.response?.data?.message || 'Failed to perform action',
         severity: 'error',
       });
+    } finally {
+      setIsActing(false);
     }
   };
 
@@ -312,6 +322,7 @@ const Dashboard = () => {
                   color="warning"
                   startIcon={<Refresh />}
                   onClick={() => openConfirmation('RESET_REVENUE')}
+                  disabled={isLoading}
                   sx={{
                     borderRadius: '12px',
                     textTransform: 'none',
@@ -325,6 +336,7 @@ const Dashboard = () => {
                   color="error"
                   startIcon={<DeleteForever />}
                   onClick={() => openConfirmation('CLEAR_HISTORY')}
+                  disabled={isLoading}
                   sx={{
                     borderRadius: '12px',
                     textTransform: 'none',
@@ -383,9 +395,13 @@ const Dashboard = () => {
                     TOTAL REVENUE
                   </Typography>
                 </Stack>
-                <Typography variant="h4" fontWeight="900">
-                  ₹{salesSummary?.totalRevenue?.toLocaleString() || 0}
-                </Typography>
+                {isLoading ? (
+                  <Skeleton variant="text" width={120} height={56} />
+                ) : (
+                  <Typography variant="h4" fontWeight="900">
+                    ₹{salesSummary?.totalRevenue?.toLocaleString() || 0}
+                  </Typography>
+                )}
               </Paper>
             </Grid>
             <Grid item xs={12} md={4}>
@@ -728,9 +744,14 @@ const Dashboard = () => {
             onClick={handleAction}
             variant="contained"
             color="error"
+            disabled={isActing}
             sx={{ borderRadius: '10px', boxShadow: 'none', px: 3 }}
           >
-            Confirm Action
+            {isActing ? (
+              <><CircularProgress size={18} sx={{ mr: 1, color: 'inherit' }} />Processing…</>
+            ) : (
+              'Confirm Action'
+            )}
           </Button>
         </DialogActions>
       </Dialog>

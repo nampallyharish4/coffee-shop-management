@@ -37,12 +37,14 @@ public class OrderService {
 
     private static final BigDecimal TAX_RATE = new BigDecimal("0.05"); // 5% tax
 
+    @Transactional(readOnly = true)
     public List<OrderDTO> getAllOrders() {
         return orderRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<OrderDTO> getOrdersByStatus(String status) {
         Order.OrderStatus orderStatus = Order.OrderStatus.valueOf(status);
         return orderRepository.findByStatus(orderStatus).stream()
@@ -50,6 +52,7 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public OrderDTO getOrderById(long id) {
         return orderRepository.findById(id)
                 .map(this::convertToDTO)

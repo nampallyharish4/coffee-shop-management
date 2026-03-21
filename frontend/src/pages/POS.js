@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Grid, Card, CardContent, Typography, Button, TextField, Select, MenuItem,
-  FormControl, InputLabel, Paper, Box, IconButton, Chip, Divider, Snackbar, Alert, InputAdornment, Stack,
-  useTheme, useMediaQuery
+  FormControl, InputLabel, Paper, Box, IconButton, Chip, Divider, Snackbar, Alert,
+  InputAdornment, Stack, useTheme, useMediaQuery, Skeleton, CircularProgress
 } from '@mui/material';
 import { Add, Remove, Delete, ShoppingCart, Search, ClearAll } from '@mui/icons-material';
 import Layout from '../components/Layout';
@@ -21,20 +21,23 @@ const POS = () => {
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [discountPercent, setDiscountPercent] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
-
-
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const loadData = async () => {
+    setIsPageLoading(true);
     try {
       const [menuRes, catRes] = await Promise.all([
         menuService.getActive(),
         categoryService.getAll()
       ]);
-      setMenuItems(menuRes.data.data);
-      setCategories(catRes.data.data);
-      setFilteredMenuItems(menuRes.data.data);
+      setMenuItems(menuRes.data.data || []);
+      setCategories(catRes.data.data || []);
+      setFilteredMenuItems(menuRes.data.data || []);
     } catch (error) {
-      setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to load data' });
+      setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to load menu data. Please refresh.' });
+    } finally {
+      setIsPageLoading(false);
     }
   };
 
@@ -45,12 +48,10 @@ const POS = () => {
   useEffect(() => {
     let result = menuItems;
 
-    // Filter by Category
     if (selectedCategory !== 'ALL') {
-      result = result.filter(item => item.categoryId === selectedCategory);
+      result = result.filter(item => item.categoryId == selectedCategory);
     }
 
-    // Filter by Search Query
     if (searchQuery.trim() !== '') {
       result = result.filter(item =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -63,7 +64,7 @@ const POS = () => {
   const addToCart = (item) => {
     const existing = cart.find(c => c.menuItemId === item.id);
     if (existing) {
-      setCart(cart.map(c => 
+      setCart(cart.map(c =>
         c.menuItemId === item.id ? { ...c, quantity: c.quantity + 1 } : c
       ));
     } else {
@@ -122,6 +123,9 @@ const POS = () => {
       return;
     }
 
+    if (isCheckingOut) return; // Prevent duplicate submissions
+
+    setIsCheckingOut(true);
     const totals = calculateTotal();
     const order = {
       items: cart,
@@ -139,7 +143,9 @@ const POS = () => {
       setCart([]);
       setDiscountPercent('');
     } catch (error) {
-      setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to create order' });
+      setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to create order. Please try again.' });
+    } finally {
+      setIsCheckingOut(false);
     }
   };
 
@@ -153,17 +159,17 @@ const POS = () => {
   const totals = calculateTotal();
 
   return (
-    <Layout 
-      title="Point of Sale" 
+    <Layout
+      title="Point of Sale"
       headerContent={
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="h6" fontWeight="bold" color="primary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
             Menu Items
           </Typography>
-          <Chip 
-            icon={<ShoppingCart />} 
-            label={isMobile ? `${cart.length}` : `${cart.length} items`} 
-            color="primary" 
+          <Chip
+            icon={<ShoppingCart />}
+            label={isMobile ? `${cart.length}` : `${cart.length} items`}
+            color="primary"
             variant="outlined"
             size="small"
           />
@@ -176,8 +182,8 @@ const POS = () => {
         onClose={handleCloseToast}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleCloseToast} 
+        <Alert
+          onClose={handleCloseToast}
           severity={message.type || 'info'}
           variant="filled"
           sx={{ width: '100%' }}
@@ -190,33 +196,40 @@ const POS = () => {
         {/* Menu Items Section */}
         <Grid item xs={12} md={8}>
 
-          <Stack direction="row" spacing={1} sx={{ 
-            mb: 2, 
-            overflowX: 'auto', 
-            pb: 1,
-            '&::-webkit-scrollbar': { height: '4px' },
-            '&::-webkit-scrollbar-thumb': { backgroundColor: 'divider', borderRadius: '4px' }
-          }}>
-            <Chip 
-              label="All" 
-              onClick={() => setSelectedCategory('ALL')}
-              color={selectedCategory === 'ALL' ? "primary" : "default"}
-              variant={selectedCategory === 'ALL' ? "filled" : "outlined"}
-              clickable
-              size="small"
-            />
-            {categories.map(cat => (
+          {/* Category Filter */}
+          {isPageLoading ? (
+            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+              {[1, 2, 3, 4].map(i => <Skeleton key={i} variant="rounded" width={80} height={32} />)}
+            </Stack>
+          ) : (
+            <Stack direction="row" spacing={1} sx={{
+              mb: 2,
+              overflowX: 'auto',
+              pb: 1,
+              '&::-webkit-scrollbar': { height: '4px' },
+              '&::-webkit-scrollbar-thumb': { backgroundColor: 'divider', borderRadius: '4px' }
+            }}>
               <Chip
-                key={cat.id}
-                label={cat.name}
-                onClick={() => setSelectedCategory(cat.id)}
-                color={selectedCategory === cat.id ? "primary" : "default"}
-                variant={selectedCategory === cat.id ? "filled" : "outlined"}
+                label="All"
+                onClick={() => setSelectedCategory('ALL')}
+                color={selectedCategory === 'ALL' ? "primary" : "default"}
+                variant={selectedCategory === 'ALL' ? "filled" : "outlined"}
                 clickable
                 size="small"
               />
-            ))}
-          </Stack>
+              {categories.map(cat => (
+                <Chip
+                  key={cat.id}
+                  label={cat.name}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  color={selectedCategory === cat.id ? "primary" : "default"}
+                  variant={selectedCategory === cat.id ? "filled" : "outlined"}
+                  clickable
+                  size="small"
+                />
+              ))}
+            </Stack>
+          )}
 
           <TextField
             fullWidth
@@ -233,223 +246,225 @@ const POS = () => {
             }}
             variant="outlined"
             size="small"
+            disabled={isPageLoading}
           />
-          
+
           <Box
             sx={{
               maxHeight: 'calc(100vh - 250px)',
               overflowY: 'auto',
               pr: 1,
-              '&::-webkit-scrollbar': {
-                width: '6px',
-              },
-              '&::-webkit-scrollbar-track': {
-                backgroundColor: 'background.default',
-                borderRadius: '3px',
-              },
+              '&::-webkit-scrollbar': { width: '6px' },
+              '&::-webkit-scrollbar-track': { backgroundColor: 'background.default', borderRadius: '3px' },
               '&::-webkit-scrollbar-thumb': {
                 backgroundColor: 'text.secondary',
                 borderRadius: '3px',
-                '&:hover': {
-                  backgroundColor: 'text.primary',
-                },
+                '&:hover': { backgroundColor: 'text.primary' },
               },
             }}
           >
             <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ p: { xs: 0, sm: 1 } }}>
-            {filteredMenuItems.map(item => (
-              <Grid item xs={6} sm={4} md={6} lg={4} xl={3} key={item.id}>
-                <Card 
-                  onClick={() => addToCart(item)}
-                  sx={{ 
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: { xs: 2, sm: 3 },
-                    overflow: 'hidden',
-                    transition: 'all 0.2s ease-in-out',
-                    cursor: 'pointer',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 12px 24px rgba(0,0,0,0.1)',
-                      borderColor: 'primary.main',
-                      '& .item-image': {
-                        transform: 'scale(1.05)'
-                      }
-                    },
-                    '&:active': {
-                      transform: 'scale(0.98)'
-                    }
-                  }}
-                >
-                  {/* Square Image Container */}
-                  <Box
-                    sx={{
-                      width: '100%',
-                      height: { xs: 100, sm: 140, md: 160, lg: 180 },
-                      overflow: 'hidden',
-                      backgroundColor: 'grey.100',
-                      position: 'relative',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    {item.imageUrl ? (
-                      <img
-                        className="item-image"
-                        src={item.imageUrl}
-                        alt={item.name}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          objectPosition: 'center',
-                          display: 'block',
-                          transition: 'transform 0.5s ease'
-                        }}
-                        onError={(e) => {
-                          e.target.src = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400';
-                        }}
-                      />
-                    ) : (
+              {isPageLoading ? (
+                // Skeleton loaders while menu loads
+                Array.from({ length: 8 }).map((_, i) => (
+                  <Grid item xs={6} sm={4} md={6} lg={4} xl={3} key={i}>
+                    <Skeleton variant="rounded" height={280} />
+                  </Grid>
+                ))
+              ) : filteredMenuItems.length === 0 ? (
+                <Grid item xs={12}>
+                  <Box sx={{ textAlign: 'center', py: 8 }}>
+                    <Typography variant="body1" color="text.secondary">
+                      {searchQuery || selectedCategory !== 'ALL' ? 'No items match your filter.' : 'No menu items available.'}
+                    </Typography>
+                  </Box>
+                </Grid>
+              ) : (
+                filteredMenuItems.map(item => (
+                  <Grid item xs={6} sm={4} md={6} lg={4} xl={3} key={item.id}>
+                    <Card
+                      onClick={() => addToCart(item)}
+                      sx={{
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        borderRadius: { xs: 2, sm: 3 },
+                        overflow: 'hidden',
+                        transition: 'all 0.2s ease-in-out',
+                        cursor: 'pointer',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 12px 24px rgba(0,0,0,0.1)',
+                          borderColor: 'primary.main',
+                          '& .item-image': { transform: 'scale(1.05)' }
+                        },
+                        '&:active': { transform: 'scale(0.98)' }
+                      }}
+                    >
                       <Box
                         sx={{
                           width: '100%',
-                          height: '100%',
+                          height: { xs: 100, sm: 140, md: 160, lg: 180 },
+                          overflow: 'hidden',
+                          backgroundColor: 'grey.100',
+                          position: 'relative',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: '#e0e0e0',
-                          color: '#9e9e9e',
-                          aspectRatio: '1 / 1'
+                          justifyContent: 'center'
                         }}
                       >
-                        <Typography variant="body2">No Image</Typography>
+                        {item.imageUrl ? (
+                          <img
+                            className="item-image"
+                            src={item.imageUrl}
+                            alt={item.name}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              objectPosition: 'center',
+                              display: 'block',
+                              transition: 'transform 0.5s ease'
+                            }}
+                            onError={(e) => {
+                              e.target.src = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400';
+                            }}
+                          />
+                        ) : (
+                          <Box
+                            sx={{
+                              width: '100%',
+                              height: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: '#e0e0e0',
+                              color: '#9e9e9e',
+                            }}
+                          >
+                            <Typography variant="body2">No Image</Typography>
+                          </Box>
+                        )}
                       </Box>
-                    )}
-                  </Box>
 
-                  {/* Card Content */}
-                  <CardContent 
-                    sx={{ 
-                      flexGrow: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      p: 1.5,
-                      pt: 1.5,
-                      '&:last-child': {
-                        pb: 1.5
-                      }
-                    }}
-                  >
-                    <Typography 
-                      variant="subtitle2" 
-                      fontWeight="bold"
-                      sx={{ 
-                        fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                        lineHeight: 1.2,
-                        mb: 0.5,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        minHeight: '2.6rem'
-                      }}
-                    >
-                      {item.name}
-                    </Typography>
-                    
-                    <Typography 
-                      variant="h6" 
-                      color="primary"
-                      fontWeight="800"
-                      sx={{ 
-                        fontSize: { xs: '0.9rem', sm: '1.1rem' },
-                        mt: 'auto',
-                        mb: 0.5
-                      }}
-                    >
-                      ₹{Number(item.price).toFixed(2)}
-                    </Typography>
-                    
-                      {cart.find(c => c.menuItemId === item.id) ? (
-                        <Box 
-                          sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            gap: 1,
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            borderRadius: 1,
-                            p: 0.5,
-                            px: 2,
-                            width: 'fit-content',
-                            ml: 'auto'
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <IconButton 
-                            size="small" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateQuantity(item.id, -1);
-                            }}
-                            sx={{ p: 0.5 }}
-                          >
-                            <Remove fontSize="small" />
-                          </IconButton>
-                          <Typography fontWeight="bold">
-                            {cart.find(c => c.menuItemId === item.id).quantity}
-                          </Typography>
-                          <IconButton 
-                            size="small" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateQuantity(item.id, 1);
-                            }}
-                            sx={{ p: 0.5 }}
-                          >
-                            <Add fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      ) : (
-                        <Button
-                          fullWidth
-                          variant="contained"
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            addToCart(item);
-                          }}
-                          sx={{ 
-                            py: 0.75,
-                            fontSize: '0.75rem',
-                            textTransform: 'none',
-                            fontWeight: 'bold',
-                            borderRadius: 1
+                      <CardContent
+                        sx={{
+                          flexGrow: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          p: 1.5,
+                          pt: 1.5,
+                          '&:last-child': { pb: 1.5 }
+                        }}
+                      >
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight="bold"
+                          sx={{
+                            fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                            lineHeight: 1.2,
+                            mb: 0.5,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            minHeight: '2.6rem'
                           }}
                         >
-                          Add to Cart
-                        </Button>
-                      )}
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
+                          {item.name}
+                        </Typography>
+
+                        <Typography
+                          variant="h6"
+                          color="primary"
+                          fontWeight="800"
+                          sx={{
+                            fontSize: { xs: '0.9rem', sm: '1.1rem' },
+                            mt: 'auto',
+                            mb: 0.5
+                          }}
+                        >
+                          ₹{Number(item.price).toFixed(2)}
+                        </Typography>
+
+                        {cart.find(c => c.menuItemId === item.id) ? (
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 1,
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              borderRadius: 1,
+                              p: 0.5,
+                              px: 2,
+                              width: 'fit-content',
+                              ml: 'auto'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateQuantity(item.id, -1);
+                              }}
+                              sx={{ p: 0.5 }}
+                            >
+                              <Remove fontSize="small" />
+                            </IconButton>
+                            <Typography fontWeight="bold">
+                              {cart.find(c => c.menuItemId === item.id).quantity}
+                            </Typography>
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateQuantity(item.id, 1);
+                              }}
+                              sx={{ p: 0.5 }}
+                            >
+                              <Add fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        ) : (
+                          <Button
+                            fullWidth
+                            variant="contained"
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addToCart(item);
+                            }}
+                            sx={{
+                              py: 0.75,
+                              fontSize: '0.75rem',
+                              textTransform: 'none',
+                              fontWeight: 'bold',
+                              borderRadius: 1
+                            }}
+                          >
+                            Add to Cart
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))
+              )}
             </Grid>
           </Box>
         </Grid>
 
         {/* Cart Section */}
         <Grid item xs={12} md={4}>
-          <Paper 
-            sx={{ 
+          <Paper
+            sx={{
               p: { xs: 2, sm: 3 },
               borderRadius: 2,
               boxShadow: 3,
@@ -469,7 +484,7 @@ const POS = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 {cart.length > 0 && (
                   <>
-                    <Chip 
+                    <Chip
                       label={`${cart.reduce((sum, item) => sum + item.quantity, 0)} items`}
                       color="primary"
                       size="small"
@@ -480,12 +495,8 @@ const POS = () => {
                       size="small"
                       startIcon={<ClearAll />}
                       onClick={clearCart}
-                      sx={{
-                        textTransform: 'none',
-                        fontSize: '0.75rem',
-                        py: 0.5,
-                        px: 1.5
-                      }}
+                      disabled={isCheckingOut}
+                      sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0.5, px: 1.5 }}
                     >
                       Clear All
                     </Button>
@@ -493,30 +504,23 @@ const POS = () => {
                 )}
               </Box>
             </Box>
-            
+
             <Divider sx={{ mb: 2 }} />
 
             {/* Cart Items */}
-            <Box 
-              sx={{ 
+            <Box
+              sx={{
                 flex: 1,
                 overflowY: 'auto',
                 mb: 2,
                 minHeight: 0,
                 pr: 1,
-                '&::-webkit-scrollbar': {
-                  width: '6px',
-                },
-                '&::-webkit-scrollbar-track': {
-                  backgroundColor: 'background.default',
-                  borderRadius: '3px',
-                },
+                '&::-webkit-scrollbar': { width: '6px' },
+                '&::-webkit-scrollbar-track': { backgroundColor: 'background.default', borderRadius: '3px' },
                 '&::-webkit-scrollbar-thumb': {
                   backgroundColor: 'text.secondary',
                   borderRadius: '3px',
-                  '&:hover': {
-                    backgroundColor: 'text.primary',
-                  },
+                  '&:hover': { backgroundColor: 'text.primary' },
                 },
               }}
             >
@@ -545,21 +549,14 @@ const POS = () => {
                         borderColor: 'divider',
                         borderRadius: 1,
                         transition: 'all 0.2s',
-                        '&:hover': {
-                          boxShadow: 2,
-                          borderColor: 'primary.main'
-                        }
+                        '&:hover': { boxShadow: 2, borderColor: 'primary.main' }
                       }}
                     >
                       <Box sx={{ flexGrow: 1, minWidth: 0, mr: 1 }}>
-                        <Typography 
-                          variant="subtitle2" 
+                        <Typography
+                          variant="subtitle2"
                           fontWeight="bold"
-                          sx={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}
+                          sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                         >
                           {item.menuItemName}
                         </Typography>
@@ -567,36 +564,26 @@ const POS = () => {
                           ₹{Number(item.price).toFixed(2)} each
                         </Typography>
                       </Box>
-                      
+
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Typography 
-                          variant="body1" 
-                          fontWeight="bold" 
-                          sx={{ 
-                            minWidth: '32px', 
-                            textAlign: 'center',
-                            fontSize: '0.95rem'
-                          }}
-                        >
+                        <Typography variant="body1" fontWeight="bold" sx={{ minWidth: '32px', textAlign: 'center', fontSize: '0.95rem' }}>
                           x{item.quantity}
                         </Typography>
                       </Box>
-                      
+
                       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', ml: 1, minWidth: '90px' }}>
                         <Typography variant="subtitle2" fontWeight="bold" color="primary" sx={{ mb: 0.5 }}>
                           ₹{(item.price * item.quantity).toFixed(2)}
                         </Typography>
-                        <IconButton 
-                          size="small" 
+                        <IconButton
+                          size="small"
                           onClick={() => removeFromCart(item.menuItemId)}
-                          sx={{ 
+                          disabled={isCheckingOut}
+                          sx={{
                             color: 'error.main',
                             width: 28,
                             height: 28,
-                            '&:hover': { 
-                              backgroundColor: 'error.light', 
-                              color: 'error.dark' 
-                            }
+                            '&:hover': { backgroundColor: 'error.light', color: 'error.dark' }
                           }}
                         >
                           <Delete fontSize="small" />
@@ -619,7 +606,6 @@ const POS = () => {
                 value={discountPercent}
                 onChange={(e) => {
                   const val = e.target.value;
-                  // Allow empty string to clear the field
                   if (val === '') {
                     setDiscountPercent('');
                     return;
@@ -630,9 +616,8 @@ const POS = () => {
                   }
                 }}
                 size="small"
-                InputProps={{
-                  inputProps: { min: 0, max: 100, step: 1 }
-                }}
+                disabled={isCheckingOut}
+                InputProps={{ inputProps: { min: 0, max: 100, step: 1 } }}
               />
 
               <FormControl fullWidth size="small">
@@ -641,6 +626,7 @@ const POS = () => {
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
                   label="Payment Method"
+                  disabled={isCheckingOut}
                 >
                   <MenuItem value="CASH">Cash</MenuItem>
                   <MenuItem value="CARD">Card</MenuItem>
@@ -649,8 +635,8 @@ const POS = () => {
               </FormControl>
 
               {/* Totals */}
-              <Box 
-                sx={{ 
+              <Box
+                sx={{
                   p: 2,
                   backgroundColor: 'background.default',
                   borderRadius: 1,
@@ -697,7 +683,7 @@ const POS = () => {
                 color="primary"
                 size="large"
                 onClick={handleCheckout}
-                disabled={cart.length === 0}
+                disabled={cart.length === 0 || isCheckingOut}
                 sx={{
                   py: 1.5,
                   fontSize: '1rem',
@@ -705,15 +691,18 @@ const POS = () => {
                   borderRadius: 1,
                   textTransform: 'none',
                   boxShadow: 2,
-                  '&:hover': {
-                    boxShadow: 4
-                  },
-                  '&:disabled': {
-                    opacity: 0.6
-                  }
+                  '&:hover': { boxShadow: 4 },
+                  '&:disabled': { opacity: 0.6 }
                 }}
               >
-                Complete Order
+                {isCheckingOut ? (
+                  <>
+                    <CircularProgress size={20} sx={{ color: 'inherit', mr: 1 }} />
+                    Processing…
+                  </>
+                ) : (
+                  'Complete Order'
+                )}
               </Button>
             </Box>
           </Paper>

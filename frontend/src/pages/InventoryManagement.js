@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Button, Table, TableBody, TableCell, TableHead, TableRow, Paper,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Tabs, Tab, Box,
-  Snackbar, Alert, InputAdornment, Stack
+  Snackbar, Alert, InputAdornment, Stack, CircularProgress, Typography, Skeleton
 } from '@mui/material';
 import { Print, Search } from '@mui/icons-material';
 import Layout from '../components/Layout';
@@ -26,69 +26,78 @@ const InventoryManagement = () => {
   });
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState({ open: false, id: null });
-
   const [usageHistory, setUsageHistory] = useState([]);
 
+  // Loading states
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [isUsageLoading, setIsUsageLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isAddingStock, setIsAddingStock] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(null);
+  const [isResettingUsage, setIsResettingUsage] = useState(false);
 
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    setIsPageLoading(true);
     try {
       const response = await inventoryService.getAll();
-      setItems(response.data.data);
+      setItems(response.data.data || []);
     } catch (error) {
-      console.error("Failed to load inventory:", error);
+      showSnackbar(error.response?.data?.message || 'Failed to load inventory. Please refresh.', 'error');
+    } finally {
+      setIsPageLoading(false);
     }
-  };
+  }, []);
 
-  const loadUsageHistory = async () => {
-     try {
-       const response = await inventoryService.getUsageHistory();
-       const rawHistory = response.data.data;
+  const loadUsageHistory = useCallback(async () => {
+    setIsUsageLoading(true);
+    try {
+      const response = await inventoryService.getUsageHistory();
+      const rawHistory = response.data.data || [];
 
-       // Aggregate history by Order ID and Inventory Item Name
-       const aggregatedHistory = Object.values(rawHistory.reduce((acc, log) => {
-         const key = `${log.orderId}-${log.inventoryItemName}`;
-         if (!acc[key]) {
-           acc[key] = { ...log, quantityUsed: 0, totalCost: 0 };
-         }
-         acc[key].quantityUsed += Number(log.quantityUsed);
-         acc[key].totalCost += Number(log.totalCost || 0);
-         // Keep the latest date if they differ, though they should be same for one order
-         return acc;
-       }, {}));
+      const aggregatedHistory = Object.values(rawHistory.reduce((acc, log) => {
+        const key = `${log.orderId}-${log.inventoryItemName}`;
+        if (!acc[key]) {
+          acc[key] = { ...log, quantityUsed: 0, totalCost: 0 };
+        }
+        acc[key].quantityUsed += Number(log.quantityUsed);
+        acc[key].totalCost += Number(log.totalCost || 0);
+        return acc;
+      }, {}));
 
-       // Sort by date descending
-       aggregatedHistory.sort((a, b) => new Date(b.usedAt) - new Date(a.usedAt));
-
-       setUsageHistory(aggregatedHistory);
-     } catch (error) {
-       console.error("Failed to load usage history:", error);
-     }
-  };
+      aggregatedHistory.sort((a, b) => new Date(b.usedAt) - new Date(a.usedAt));
+      setUsageHistory(aggregatedHistory);
+    } catch (error) {
+      showSnackbar(error.response?.data?.message || 'Failed to load usage history.', 'error');
+    } finally {
+      setIsUsageLoading(false);
+    }
+  }, []);
 
   const handleResetUsageHistory = async () => {
     if (resetUsageText !== 'RESET USAGE') {
-      alert('Please type "RESET USAGE" to confirm');
+      showSnackbar('Please type "RESET USAGE" to confirm.', 'error');
       return;
     }
 
+    setIsResettingUsage(true);
     try {
       await inventoryService.resetUsageHistory();
       setResetUsageOpen(false);
       setResetUsageText('');
       loadUsageHistory();
-      setSnackbar({ open: true, message: 'Usage history has been reset successfully!', severity: 'success' });
+      showSnackbar('Usage history has been reset successfully!', 'success');
     } catch (error) {
-      console.error('Failed to reset usage history:', error);
-      setSnackbar({ open: true, message: error.response?.data?.message || 'Failed to reset usage history', severity: 'error' });
+      showSnackbar(error.response?.data?.message || 'Failed to reset usage history.', 'error');
+    } finally {
+      setIsResettingUsage(false);
     }
   };
 
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
-
-  const filterItems = React.useCallback(() => {
+  const filterItems = useCallback(() => {
     let result = items;
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
@@ -99,23 +108,23 @@ const InventoryManagement = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   useEffect(() => {
     filterItems();
-  }, [tab, items, filterItems]);
+  }, [filterItems]);
 
   useEffect(() => {
     if (tab === 1) {
       loadUsageHistory();
     }
-  }, [tab]);
+  }, [tab, loadUsageHistory]);
 
   const handlePrintRestockReport = () => {
     const lowStockItems = items.filter(item => item.lowStock || item.outOfStock);
-    
+
     if (lowStockItems.length === 0) {
-      alert('No items currently in low stock or out of stock.');
+      showSnackbar('No items currently in low stock or out of stock.', 'info');
       return;
     }
 
@@ -148,7 +157,6 @@ const InventoryManagement = () => {
               <p>Total Items: ${lowStockItems.length}</p>
             </div>
           </div>
-          
           <table>
             <thead>
               <tr>
@@ -163,7 +171,6 @@ const InventoryManagement = () => {
               ${lowStockItems.map(item => {
                 const status = item.outOfStock ? 'Out of Stock' : 'Low Stock';
                 const statusClass = item.outOfStock ? 'status-out' : 'status-low';
-                // Suggest topping up to 2x Reorder Level for safety buffer
                 const recommendedAdd = Math.ceil((item.reorderLevel * 2) - item.currentStock);
                 return `
                   <tr>
@@ -177,11 +184,9 @@ const InventoryManagement = () => {
               }).join('')}
             </tbody>
           </table>
-
           <div class="footer">
             Coffee Shop Management System | Internal Use Only
           </div>
-
           <script>
             window.onload = function() { window.print(); }
           </script>
@@ -194,59 +199,71 @@ const InventoryManagement = () => {
       printWindow.document.write(reportContent);
       printWindow.document.close();
     } else {
-      alert('Please allow popups to view the report');
+      showSnackbar('Please allow popups to view the report.', 'warning');
     }
   };
 
   const handleSave = async () => {
+    if (!formData.name.trim() || !formData.unit.trim()) {
+      showSnackbar('Name and Unit are required fields.', 'error');
+      return;
+    }
+
+    // Check for duplicate name (case-insensitive)
+    const isDuplicate = items.some(item =>
+      item.name.toLowerCase() === formData.name.trim().toLowerCase() &&
+      item.id !== (editItem ? editItem.id : null)
+    );
+
+    if (isDuplicate) {
+      setDuplicateDialogOpen(true);
+      return;
+    }
+
+    setIsSaving(true);
     try {
-      // Ensure numeric values are properly converted
       const dataToSend = {
         ...formData,
         currentStock: formData.currentStock ? Number(formData.currentStock) : 0,
         reorderLevel: formData.reorderLevel ? Number(formData.reorderLevel) : 0,
         unitPrice: formData.unitPrice ? Number(formData.unitPrice) : 0
       };
-      
-      // Check for duplicate name (case-insensitive)
-      const isDuplicate = items.some(item => 
-        item.name.toLowerCase() === dataToSend.name.toLowerCase() && 
-        item.id !== (editItem ? editItem.id : null)
-      );
 
-      if (isDuplicate) {
-        setDuplicateDialogOpen(true);
-        return;
-      }
-      
       if (editItem) {
         await inventoryService.update(editItem.id, dataToSend);
+        showSnackbar('Inventory item updated successfully!', 'success');
       } else {
         await inventoryService.create(dataToSend);
+        showSnackbar('Inventory item created successfully!', 'success');
       }
       setOpen(false);
       loadData();
       resetForm();
     } catch (error) {
-      console.error('Failed to save inventory item:', error);
-      alert(error.response?.data?.message || 'Failed to save inventory item. Please check all fields and try again.');
+      showSnackbar(error.response?.data?.message || 'Failed to save inventory item. Please try again.', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleAddStock = async () => {
+    const amount = parseFloat(stockAmount);
+    if (isNaN(amount) || amount <= 0) {
+      showSnackbar('Please enter a valid positive number.', 'error');
+      return;
+    }
+
+    setIsAddingStock(true);
     try {
-      const amount = parseFloat(stockAmount);
-      if (isNaN(amount) || amount <= 0) {
-        alert('Please enter a valid positive number');
-        return;
-      }
       await inventoryService.addStock(stockItem.id, amount);
       setAddStockOpen(false);
       setStockAmount('');
+      showSnackbar(`Stock added to ${stockItem.name} successfully!`, 'success');
       loadData();
     } catch (error) {
-      console.error('Failed to add stock:', error);
-      alert(error.response?.data?.message || 'Failed to add stock. Please try again.');
+      showSnackbar(error.response?.data?.message || 'Failed to add stock. Please try again.', 'error');
+    } finally {
+      setIsAddingStock(false);
     }
   };
 
@@ -258,23 +275,16 @@ const InventoryManagement = () => {
     const { id } = deleteConfirmation;
     if (!id) return;
 
+    setIsDeleting(id);
+    setDeleteConfirmation({ open: false, id: null });
     try {
       await inventoryService.delete(id);
-      setSnackbar({
-        open: true,
-        message: 'Inventory item deleted successfully!',
-        severity: 'success'
-      });
+      showSnackbar('Inventory item deleted successfully!', 'success');
       loadData();
     } catch (error) {
-      console.error('Failed to delete inventory item:', error);
-      setSnackbar({
-        open: true,
-        message: error.response?.data?.message || 'Failed to delete inventory item. Please try again.',
-        severity: 'error'
-      });
+      showSnackbar(error.response?.data?.message || 'Failed to delete inventory item.', 'error');
     } finally {
-      setDeleteConfirmation({ open: false, id: null });
+      setIsDeleting(null);
     }
   };
 
@@ -295,31 +305,41 @@ const InventoryManagement = () => {
 
   const openAddStock = (item = null) => {
     setStockItem(item);
+    setStockAmount('');
     setAddStockOpen(true);
   };
 
   const formatUsage = (qty, unit) => {
     const val = Number(qty);
     if (!unit) return `-${val.toFixed(2)}`;
-    
     const u = unit.toLowerCase();
     if (u === 'liters') return `-${(val * 1000).toFixed(0)} ml`;
     if (u === 'kg') return `-${(val * 1000).toFixed(0)} grams`;
     if (u === 'pieces') return `-${val.toFixed(0)} ps`;
-    
     return `-${val.toFixed(2)} ${unit}`;
   };
 
   return (
     <Layout title="Inventory Management">
-      <Stack 
-        direction={{ xs: 'column', md: 'row' }} 
-        spacing={2} 
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }} variant="filled">
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={2}
         sx={{ mb: 2 }}
         alignItems={{ xs: 'stretch', md: 'center' }}
       >
-        <TextField 
-          placeholder="Search items..." 
+        <TextField
+          placeholder="Search items..."
           size="small"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -330,8 +350,8 @@ const InventoryManagement = () => {
               </InputAdornment>
             ),
           }}
-          sx={{ 
-            bgcolor: 'background.paper', 
+          sx={{
+            bgcolor: 'background.paper',
             borderRadius: 1,
             flexGrow: 1,
             maxWidth: { md: '300px' },
@@ -340,12 +360,11 @@ const InventoryManagement = () => {
           }}
         />
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ ml: { md: 'auto' } }}>
-          <button style={{ display: 'none' }} onClick={() => openDialog()}>HIDDEN</button> 
           <Button variant="contained" onClick={() => openDialog()} fullWidth={tab === 0}>
             Add Item
           </Button>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             startIcon={<Print />}
             onClick={handlePrintRestockReport}
             color="secondary"
@@ -353,9 +372,9 @@ const InventoryManagement = () => {
             Restock Report
           </Button>
           {tab === 1 && (
-            <Button 
-              variant="contained" 
-              color="error" 
+            <Button
+              variant="contained"
+              color="error"
               onClick={() => setResetUsageOpen(true)}
             >
               Reset History
@@ -364,9 +383,9 @@ const InventoryManagement = () => {
         </Stack>
       </Stack>
 
-      <Tabs 
-        value={tab} 
-        onChange={(e, v) => setTab(v)} 
+      <Tabs
+        value={tab}
+        onChange={(e, v) => setTab(v)}
         sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
         variant="scrollable"
         scrollButtons="auto"
@@ -381,142 +400,169 @@ const InventoryManagement = () => {
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ minWidth: 150 }}>Date & Time</TableCell>
+                  <TableCell sx={{ minWidth: 150 }}>Date &amp; Time</TableCell>
                   <TableCell sx={{ minWidth: 150 }}>Item Name</TableCell>
                   <TableCell sx={{ minWidth: 100 }}>Source</TableCell>
                   <TableCell sx={{ minWidth: 120 }}>Quantity Deducted</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {usageHistory.map(log => (
-                  <TableRow key={log.id}>
-                    <TableCell>{new Date(log.usedAt).toLocaleString()}</TableCell>
-                    <TableCell>{log.inventoryItemName}</TableCell>
-                    <TableCell>Order #{log.orderId}</TableCell>
-                    <TableCell sx={{ color: 'error.main', fontWeight: 'bold' }}>
-                      {formatUsage(log.quantityUsed, items.find(i => i.name === log.inventoryItemName)?.unit)}
+                {isUsageLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      {Array.from({ length: 4 }).map((__, j) => (
+                        <TableCell key={j}><Skeleton variant="text" /></TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : usageHistory.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                      <Typography color="text.secondary">No usage history found.</Typography>
                     </TableCell>
                   </TableRow>
-                ))}
-                {usageHistory.length === 0 && (
-                   <TableRow>
-                     <TableCell colSpan={4} align="center">No usage history found</TableCell>
-                   </TableRow>
+                ) : (
+                  usageHistory.map((log, idx) => (
+                    <TableRow key={`${log.orderId}-${log.inventoryItemName}-${idx}`}>
+                      <TableCell>{new Date(log.usedAt).toLocaleString()}</TableCell>
+                      <TableCell>{log.inventoryItemName}</TableCell>
+                      <TableCell>Order #{log.orderId}</TableCell>
+                      <TableCell sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                        {formatUsage(log.quantityUsed, items.find(i => i.name === log.inventoryItemName)?.unit)}
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
           </Box>
         </Paper>
       ) : (
-      <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: '12px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
-        <Box sx={{ overflowX: 'auto' }}>
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ minWidth: 150 }}>Name</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>Current Stock</TableCell>
-                <TableCell sx={{ minWidth: 80 }}>Unit</TableCell>
-                <TableCell sx={{ minWidth: 100 }}>Unit Price</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>Reorder Level</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>Status</TableCell>
-                <TableCell sx={{ minWidth: 250 }}>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredItems.map(item => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell>{item.currentStock}</TableCell>
-                  <TableCell>{item.unit}</TableCell>
-                  <TableCell>₹{Number(item.unitPrice || 0).toFixed(2)}</TableCell>
-                  <TableCell>{item.reorderLevel}</TableCell>
-                  <TableCell>
-                    {item.outOfStock && <Chip label="Out of Stock" color="error" size="small" />}
-                    {item.lowStock && !item.outOfStock && <Chip label="Low Stock" color="warning" size="small" />}
-                    {!item.lowStock && <Chip label="OK" color="success" size="small" />}
-                  </TableCell>
-                  <TableCell>
-                    <Button onClick={() => openAddStock(item)} size="small">Add Stock</Button>
-                    <Button onClick={() => openDialog(item)} size="small">Edit</Button>
-                    <Button onClick={() => handleDeleteClick(item.id)} size="small" color="error">Delete</Button>
-                  </TableCell>
+        <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: '12px', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+          <Box sx={{ overflowX: 'auto' }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ minWidth: 150 }}>Name</TableCell>
+                  <TableCell sx={{ minWidth: 120 }}>Current Stock</TableCell>
+                  <TableCell sx={{ minWidth: 80 }}>Unit</TableCell>
+                  <TableCell sx={{ minWidth: 100 }}>Unit Price</TableCell>
+                  <TableCell sx={{ minWidth: 120 }}>Reorder Level</TableCell>
+                  <TableCell sx={{ minWidth: 120 }}>Status</TableCell>
+                  <TableCell sx={{ minWidth: 250 }}>Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Box>
-      </Paper>
+              </TableHead>
+              <TableBody>
+                {isPageLoading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <TableRow key={i}>
+                      {Array.from({ length: 7 }).map((__, j) => (
+                        <TableCell key={j}><Skeleton variant="text" /></TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : filteredItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                      <Typography color="text.secondary">
+                        {searchQuery ? 'No items match your search.' : 'No inventory items found.'}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredItems.map(item => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell>{item.currentStock}</TableCell>
+                      <TableCell>{item.unit}</TableCell>
+                      <TableCell>₹{Number(item.unitPrice || 0).toFixed(2)}</TableCell>
+                      <TableCell>{item.reorderLevel}</TableCell>
+                      <TableCell>
+                        {item.outOfStock && <Chip label="Out of Stock" color="error" size="small" />}
+                        {item.lowStock && !item.outOfStock && <Chip label="Low Stock" color="warning" size="small" />}
+                        {!item.lowStock && !item.outOfStock && <Chip label="OK" color="success" size="small" />}
+                      </TableCell>
+                      <TableCell>
+                        <Button onClick={() => openAddStock(item)} size="small" disabled={isDeleting === item.id}>Add Stock</Button>
+                        <Button onClick={() => openDialog(item)} size="small" disabled={isDeleting === item.id}>Edit</Button>
+                        <Button
+                          onClick={() => handleDeleteClick(item.id)}
+                          size="small"
+                          color="error"
+                          disabled={isDeleting === item.id}
+                          startIcon={isDeleting === item.id ? <CircularProgress size={14} /> : null}
+                        >
+                          Delete
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </Box>
+        </Paper>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+      {/* Add/Edit Dialog */}
+      <Dialog open={open} onClose={() => { if (!isSaving) setOpen(false); }} maxWidth="sm" fullWidth>
         <DialogTitle>{editItem ? 'Edit' : 'Add'} Inventory Item</DialogTitle>
         <DialogContent>
           <TextField
-            fullWidth
-            label="Name"
-            value={formData.name}
+            fullWidth label="Name *" value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            margin="normal"
+            margin="normal" disabled={isSaving}
           />
           <TextField
-            fullWidth
-            label="Unit (ml, g, pcs)"
-            value={formData.unit}
+            fullWidth label="Unit (ml, g, pcs) *" value={formData.unit}
             onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-            margin="normal"
+            margin="normal" disabled={isSaving}
           />
           <TextField
-            fullWidth
-            label="Current Stock"
-            type="number"
-            value={formData.currentStock}
+            fullWidth label="Current Stock" type="number" value={formData.currentStock}
             onChange={(e) => setFormData({ ...formData, currentStock: e.target.value })}
-            margin="normal"
+            margin="normal" disabled={isSaving}
           />
           <TextField
-            fullWidth
-            label="Reorder Level"
-            type="number"
-            value={formData.reorderLevel}
+            fullWidth label="Reorder Level" type="number" value={formData.reorderLevel}
             onChange={(e) => setFormData({ ...formData, reorderLevel: e.target.value })}
-            margin="normal"
+            margin="normal" disabled={isSaving}
           />
           <TextField
-            fullWidth
-            label="Unit Price (Per Unit)"
-            type="number"
-            value={formData.unitPrice || ''}
+            fullWidth label="Unit Price (Per Unit)" type="number" value={formData.unitPrice || ''}
             onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
-            margin="normal"
-            InputProps={{
-              startAdornment: <InputAdornment position="start">₹</InputAdornment>,
-            }}
+            margin="normal" disabled={isSaving}
+            InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained">Save</Button>
+          <Button onClick={() => setOpen(false)} disabled={isSaving}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained" disabled={isSaving}>
+            {isSaving ? <><CircularProgress size={18} sx={{ mr: 1, color: 'inherit' }} />Saving…</> : 'Save'}
+          </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={addStockOpen} onClose={() => setAddStockOpen(false)}>
+      {/* Add Stock Dialog */}
+      <Dialog open={addStockOpen} onClose={() => { if (!isAddingStock) { setAddStockOpen(false); setStockAmount(''); } }}>
         <DialogTitle>Add Stock to {stockItem?.name}</DialogTitle>
         <DialogContent>
           <TextField
-            fullWidth
-            label="Quantity to Add"
-            type="number"
-            value={stockAmount}
+            fullWidth label="Quantity to Add" type="number" value={stockAmount}
             onChange={(e) => setStockAmount(e.target.value)}
-            margin="normal"
+            margin="normal" disabled={isAddingStock}
+            autoFocus
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAddStockOpen(false)}>Cancel</Button>
-          <Button onClick={handleAddStock} variant="contained">Add</Button>
+          <Button onClick={() => { setAddStockOpen(false); setStockAmount(''); }} disabled={isAddingStock}>Cancel</Button>
+          <Button onClick={handleAddStock} variant="contained" disabled={isAddingStock}>
+            {isAddingStock ? <><CircularProgress size={18} sx={{ mr: 1, color: 'inherit' }} />Adding…</> : 'Add'}
+          </Button>
         </DialogActions>
       </Dialog>
-      
+
+      {/* Duplicate Dialog */}
       <Dialog open={duplicateDialogOpen} onClose={() => setDuplicateDialogOpen(false)}>
         <DialogTitle sx={{ color: 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
           <span style={{ fontSize: '1.5rem' }}>⚠️</span> Duplicate Item
@@ -529,14 +575,12 @@ const InventoryManagement = () => {
           <Button onClick={() => setDuplicateDialogOpen(false)} variant="contained" color="primary">OK</Button>
         </DialogActions>
       </Dialog>
-      
-      <Dialog
-        open={deleteConfirmation.open}
-        onClose={() => setDeleteConfirmation({ open: false, id: null })}
-      >
+
+      {/* Delete Confirmation */}
+      <Dialog open={deleteConfirmation.open} onClose={() => setDeleteConfirmation({ open: false, id: null })}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-          <p>Are you sure you want to delete this inventory item? This action cannot be undone.</p>
+          <Typography>Are you sure you want to delete this inventory item? This action cannot be undone.</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteConfirmation({ open: false, id: null })}>Cancel</Button>
@@ -544,45 +588,34 @@ const InventoryManagement = () => {
         </DialogActions>
       </Dialog>
 
-
-      <Dialog open={resetUsageOpen} onClose={() => setResetUsageOpen(false)}>
+      {/* Reset Usage History Dialog */}
+      <Dialog open={resetUsageOpen} onClose={() => { if (!isResettingUsage) setResetUsageOpen(false); }}>
         <DialogTitle>Reset Usage History</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1 }}>
-            <p>This will permanently delete all usage history records. This action cannot be undone.</p>
+            <Typography sx={{ mb: 2 }}>This will permanently delete all usage history records. This action cannot be undone.</Typography>
             <TextField
-              fullWidth
-              label="Type 'RESET USAGE' to confirm"
+              fullWidth label="Type 'RESET USAGE' to confirm"
               value={resetUsageText}
               onChange={(e) => setResetUsageText(e.target.value)}
               margin="normal"
               color="error"
+              disabled={isResettingUsage}
             />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setResetUsageOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={handleResetUsageHistory} 
-            variant="contained" 
+          <Button onClick={() => setResetUsageOpen(false)} disabled={isResettingUsage}>Cancel</Button>
+          <Button
+            onClick={handleResetUsageHistory}
+            variant="contained"
             color="error"
-            disabled={resetUsageText !== 'RESET USAGE'}
+            disabled={resetUsageText !== 'RESET USAGE' || isResettingUsage}
           >
-            Reset History
+            {isResettingUsage ? <><CircularProgress size={18} sx={{ mr: 1, color: 'inherit' }} />Resetting…</> : 'Reset History'}
           </Button>
         </DialogActions>
       </Dialog>
-      
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={6000} 
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }} variant="filled">
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Layout>
   );
 };

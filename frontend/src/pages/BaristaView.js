@@ -16,6 +16,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  CircularProgress,
 } from '@mui/material';
 import { NotificationsActive, NotificationsOff } from '@mui/icons-material';
 import Layout from '../components/Layout';
@@ -51,6 +52,7 @@ const BaristaView = () => {
     NOTIFICATION_TUNES[0].url,
   );
   const [snackbar, setSnackbar] = useState({ open: false, message: '' });
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const lastDisplayedIds = React.useRef(new Set());
   const isInitialized = React.useRef(false);
   // Initialize with selected tune
@@ -160,9 +162,11 @@ const BaristaView = () => {
   }, [selectedTuneUrl]);
 
   const updateStatus = async (orderId, newStatus) => {
+    if (updatingOrderId === orderId) return; // Prevent double-click
+    setUpdatingOrderId(orderId);
     try {
       await orderService.updateStatus(orderId, newStatus);
-      loadOrders();
+      await loadOrders();
     } catch (error) {
       console.error('Failed to update order status:', error);
       setSnackbar({
@@ -172,6 +176,8 @@ const BaristaView = () => {
           'Failed to update order status. Please try again.',
         severity: 'error',
       });
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -334,13 +340,20 @@ const BaristaView = () => {
                   variant="contained"
                   color="primary"
                   sx={{ mt: 2 }}
+                  disabled={updatingOrderId === order.id}
                   onClick={() =>
                     updateStatus(order.id, getNextStatus(order.status))
                   }
                 >
-                  {order.status === 'CREATED' && 'Start Preparation'}
-                  {order.status === 'IN_PREPARATION' && 'Mark Ready'}
-                  {order.status === 'READY' && 'Complete Order'}
+                  {updatingOrderId === order.id ? (
+                    <CircularProgress size={22} sx={{ color: 'inherit' }} />
+                  ) : (
+                    <>
+                      {order.status === 'CREATED' && 'Start Preparation'}
+                      {order.status === 'IN_PREPARATION' && 'Mark Ready'}
+                      {order.status === 'READY' && 'Complete Order'}
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>

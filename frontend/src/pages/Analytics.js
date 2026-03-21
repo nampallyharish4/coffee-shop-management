@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Grid, Paper, Typography, Select, MenuItem, FormControl, InputLabel, Box,
-  Table, TableBody, TableCell, TableHead, TableRow, Button, Dialog, DialogTitle, 
-  DialogContent, DialogActions, TextField, Alert, Stack
+  Table, TableBody, TableCell, TableHead, TableRow, Button, Dialog, DialogTitle,
+  DialogContent, DialogActions, TextField, Alert, Stack, Skeleton, CircularProgress
 } from '@mui/material';
 import { Payments, ReceiptLong, QueryStats } from '@mui/icons-material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -15,13 +15,14 @@ const Analytics = () => {
   const [topItems, setTopItems] = useState([]);
   const [staffPerformance, setStaffPerformance] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogType, setDialogType] = useState('RESET_REVENUE'); // 'RESET_REVENUE' or 'CLEAR_HISTORY'
+  const [dialogType, setDialogType] = useState('RESET_REVENUE');
   const [confirmText, setConfirmText] = useState('');
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isActing, setIsActing] = useState(false);
 
-
-
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
+    setIsLoading(true);
     try {
       const [sales, items, staff] = await Promise.all([
         analyticsService.getSales(range),
@@ -33,17 +34,18 @@ const Analytics = () => {
       setStaffPerformance(staff.data.data || []);
     } catch (error) {
       console.error('Failed to load analytics:', error);
-      // Set default values on error
       setSalesSummary({ totalRevenue: 0, orderCount: 0, averageOrderValue: 0 });
       setTopItems([]);
       setStaffPerformance([]);
+      setAlert({ open: true, message: 'Failed to load analytics data. Please try again.', severity: 'error' });
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [range]);
 
   useEffect(() => {
     loadAnalytics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range]);
+  }, [loadAnalytics]);
 
   const handleAction = async () => {
     const requiredText = dialogType === 'RESET_REVENUE' ? 'RESET REVENUE' : 'DELETE EVERYTHING';
@@ -56,15 +58,17 @@ const Analytics = () => {
       return;
     }
 
+    setIsActing(true);
     try {
       if (dialogType === 'RESET_REVENUE') {
         await orderService.resetRevenue();
       } else {
         await orderService.deleteAll();
       }
-      
+
       setOpenDialog(false);
       setConfirmText('');
+      setAlert({ open: true, message: 'Action performed successfully.', severity: 'success' });
       loadAnalytics();
     } catch (error) {
       setAlert({
@@ -72,6 +76,8 @@ const Analytics = () => {
         message: error.response?.data?.message || 'Failed to perform action',
         severity: 'error'
       });
+    } finally {
+      setIsActing(false);
     }
   };
 
@@ -89,8 +95,8 @@ const Analytics = () => {
   return (
     <Layout title="Analytics & Reports">
       {alert.open && (
-        <Alert 
-          severity={alert.severity} 
+        <Alert
+          severity={alert.severity}
           onClose={handleCloseAlert}
           sx={{ mb: 2 }}
         >
@@ -98,36 +104,38 @@ const Analytics = () => {
         </Alert>
       )}
 
-      <Box sx={{ 
-        mb: 3, 
-        display: 'flex', 
-        flexDirection: { xs: 'column', sm: 'row' }, 
-        justifyContent: 'space-between', 
+      <Box sx={{
+        mb: 3,
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between',
         alignItems: { xs: 'stretch', sm: 'center' },
-        gap: 2 
+        gap: 2
       }}>
         <FormControl sx={{ minWidth: { xs: '100%', sm: 200 } }} size="small">
           <InputLabel>Time Range</InputLabel>
-          <Select value={range} label="Time Range" onChange={(e) => setRange(e.target.value)}>
+          <Select value={range} label="Time Range" onChange={(e) => setRange(e.target.value)} disabled={isLoading}>
             <MenuItem value="daily">Daily</MenuItem>
             <MenuItem value="weekly">Weekly</MenuItem>
             <MenuItem value="monthly">Monthly</MenuItem>
           </Select>
         </FormControl>
         <Stack direction="row" spacing={2} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-          <Button 
-            variant="contained" 
-            color="warning" 
+          <Button
+            variant="contained"
+            color="warning"
             onClick={() => openConfirmation('RESET_REVENUE')}
             fullWidth
+            disabled={isLoading}
           >
             Reset Revenue
           </Button>
-          <Button 
-            variant="contained" 
-            color="error" 
+          <Button
+            variant="contained"
+            color="error"
             onClick={() => openConfirmation('CLEAR_HISTORY')}
             fullWidth
+            disabled={isLoading}
           >
             Clear History
           </Button>
@@ -143,7 +151,10 @@ const Analytics = () => {
               </Box>
               <Typography variant="subtitle2" color="text.secondary" fontWeight="700">TOTAL REVENUE</Typography>
             </Stack>
-            <Typography variant="h4" fontWeight="900">₹{salesSummary?.totalRevenue?.toLocaleString() || 0}</Typography>
+            {isLoading
+              ? <Skeleton variant="text" width={130} height={56} />
+              : <Typography variant="h4" fontWeight="900">₹{salesSummary?.totalRevenue?.toLocaleString() || 0}</Typography>
+            }
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
@@ -154,7 +165,10 @@ const Analytics = () => {
               </Box>
               <Typography variant="subtitle2" color="text.secondary" fontWeight="700">TOTAL ORDERS</Typography>
             </Stack>
-            <Typography variant="h4" fontWeight="900">{salesSummary?.orderCount || 0}</Typography>
+            {isLoading
+              ? <Skeleton variant="text" width={80} height={56} />
+              : <Typography variant="h4" fontWeight="900">{salesSummary?.orderCount || 0}</Typography>
+            }
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
@@ -165,23 +179,30 @@ const Analytics = () => {
               </Box>
               <Typography variant="subtitle2" color="text.secondary" fontWeight="700">AVG ORDER VALUE</Typography>
             </Stack>
-            <Typography variant="h4" fontWeight="900">₹{salesSummary?.averageOrderValue?.toLocaleString() || 0}</Typography>
+            {isLoading
+              ? <Skeleton variant="text" width={110} height={56} />
+              : <Typography variant="h4" fontWeight="900">₹{salesSummary?.averageOrderValue?.toLocaleString() || 0}</Typography>
+            }
           </Paper>
         </Grid>
 
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>Top Selling Items</Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topItems}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="itemName" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="totalQuantity" fill="#6F4E37" />
-              </BarChart>
-            </ResponsiveContainer>
+            {isLoading ? (
+              <Skeleton variant="rectangular" height={300} />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={topItems}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="itemName" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="totalQuantity" fill="#6F4E37" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </Paper>
         </Grid>
 
@@ -198,13 +219,29 @@ const Analytics = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {staffPerformance.map((staff, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>{staff.userName}</TableCell>
-                      <TableCell align="right">{staff.orderCount}</TableCell>
-                      <TableCell align="right">₹{staff.totalRevenue || 0}</TableCell>
+                  {isLoading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton variant="text" /></TableCell>
+                        <TableCell><Skeleton variant="text" /></TableCell>
+                        <TableCell><Skeleton variant="text" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : staffPerformance.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} align="center">
+                        <Typography color="text.secondary" variant="body2">No data available.</Typography>
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    staffPerformance.map((staff, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{staff.userName}</TableCell>
+                        <TableCell align="right">{staff.orderCount}</TableCell>
+                        <TableCell align="right">₹{staff.totalRevenue || 0}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </Box>
@@ -212,15 +249,15 @@ const Analytics = () => {
         </Grid>
       </Grid>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+      <Dialog open={openDialog} onClose={() => { if (!isActing) setOpenDialog(false); }}>
         <DialogTitle>
-            {dialogType === 'RESET_REVENUE' ? 'Reset Revenue' : 'Clear All History'}
+          {dialogType === 'RESET_REVENUE' ? 'Reset Revenue' : 'Clear All History'}
         </DialogTitle>
         <DialogContent>
           <Typography sx={{ mb: 2 }}>
-            {dialogType === 'RESET_REVENUE' 
-                ? 'This action will cancel all completed orders and reset the revenue to zero. This cannot be undone.'
-                : 'DANGER: This action will PERMANENTLY DELETE all order history and inventory usage logs. This data cannot be recovered.'
+            {dialogType === 'RESET_REVENUE'
+              ? 'This action will cancel all completed orders and reset the revenue to zero. This cannot be undone.'
+              : 'DANGER: This action will PERMANENTLY DELETE all order history and inventory usage logs. This data cannot be recovered.'
             }
           </Typography>
           <TextField
@@ -228,12 +265,16 @@ const Analytics = () => {
             label={`Type '${dialogType === 'RESET_REVENUE' ? 'RESET REVENUE' : 'DELETE EVERYTHING'}' to confirm`}
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
+            disabled={isActing}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleAction} variant="contained" color="error">
-            {dialogType === 'RESET_REVENUE' ? 'Reset Revenue' : 'Delete Everything'}
+          <Button onClick={() => setOpenDialog(false)} disabled={isActing}>Cancel</Button>
+          <Button onClick={handleAction} variant="contained" color="error" disabled={isActing}>
+            {isActing
+              ? <><CircularProgress size={18} sx={{ mr: 1, color: 'inherit' }} />Processing…</>
+              : (dialogType === 'RESET_REVENUE' ? 'Reset Revenue' : 'Delete Everything')
+            }
           </Button>
         </DialogActions>
       </Dialog>

@@ -47,6 +47,44 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+
+    // Give a formatted and fallback error message for consistent handling
+    let errorMessage = 'An unexpected error occurred. Please try again.';
+    
+    if (error.response) {
+      // Server responded with an error status
+      const { status, data } = error.response;
+      if (data && data.message) {
+         errorMessage = data.message;
+      } else if (typeof data === 'string' && data.trim()) {
+         errorMessage = data;
+      } else if (status === 403) {
+         errorMessage = 'You do not have permission to perform this action.';
+      } else if (status === 404) {
+         errorMessage = 'The requested resource was not found.';
+      } else if (status >= 500) {
+         errorMessage = 'Server error. Please try again later.';
+      } else if (status === 401 && isLoginRequest) {
+         errorMessage = 'Invalid credentials. Please try again.';
+      } else if (status === 401) {
+         errorMessage = 'Your session has expired. Please log in again.';
+      }
+    } else if (error.request) {
+      // Request was made but no response received
+      errorMessage = 'Network error. Please check your connection to the server.';
+    }
+
+    // Consistently attach the message back to the error object so components can rely on error.response.data.message
+    if (!error.response) {
+      error.response = { data: { message: errorMessage } };
+    } else if (!error.response.data) {
+      error.response.data = { message: errorMessage };
+    } else if (typeof error.response.data === 'string') {
+      error.response.data = { message: errorMessage };
+    } else if (!error.response.data.message) {
+      error.response.data.message = errorMessage;
+    }
+
     return Promise.reject(error);
   }
 );

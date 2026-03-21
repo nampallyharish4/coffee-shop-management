@@ -2,6 +2,7 @@ package com.coffeeshop.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -25,8 +26,10 @@ public class OrderDTO {
     private LocalDateTime completedAt;
     
     @NotEmpty(message = "Order must have at least one item")
+    @Valid
     private List<OrderItemDTO> items;
     
+    @Valid
     private PaymentDTO payment;
     
     @Data

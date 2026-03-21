@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Button,
   Table,
@@ -25,6 +25,9 @@ import {
   IconButton,
   Typography,
   Grid,
+  CircularProgress,
+  Skeleton,
+  Chip,
 } from '@mui/material';
 import { Delete, Add } from '@mui/icons-material';
 import Layout from '../components/Layout';
@@ -56,7 +59,6 @@ const MenuManagement = () => {
     active: true,
     ingredients: [],
   });
-  // State for new ingredient input in dialog
   const [newIngredient, setNewIngredient] = useState({
     inventoryItem: null,
     quantity: '',
@@ -68,81 +70,86 @@ const MenuManagement = () => {
   });
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
 
-  const loadData = async () => {
-    const [menuRes, catRes, invRes] = await Promise.all([
-      menuService.getAll(),
-      categoryService.getAll(),
-      inventoryService.getAll(),
-    ]);
-    setItems(menuRes.data.data);
-    setCategories(catRes.data.data);
-    setInventoryItems(invRes.data.data);
+  // Loading states
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(null);
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
   };
+
+  const loadData = useCallback(async () => {
+    setIsPageLoading(true);
+    try {
+      const [menuRes, catRes, invRes] = await Promise.all([
+        menuService.getAll(),
+        categoryService.getAll(),
+        inventoryService.getAll(),
+      ]);
+      setItems(menuRes.data.data || []);
+      setCategories(catRes.data.data || []);
+      setInventoryItems(invRes.data.data || []);
+    } catch (error) {
+      showSnackbar(
+        error.response?.data?.message || 'Failed to load data. Please refresh.',
+        'error'
+      );
+    } finally {
+      setIsPageLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const handleSave = async () => {
-    try {
-      // Validate required fields
-      if (!formData.name || !formData.categoryId || !formData.price) {
-        setSnackbar({
-          open: true,
-          message: 'Please fill in all required fields (Name, Category, Price)',
-          severity: 'error',
-        });
-        return;
-      }
-
-      // Ensure categoryId and price are numbers
-      const dataToSend = {
-        ...formData,
-        categoryId: Number(formData.categoryId),
-        price: Number(formData.price),
-      };
-
-      // Check for duplicate name (case-insensitive)
-      const isDuplicate = items.some(
-        (item) =>
-          item.name.toLowerCase() === dataToSend.name.toLowerCase() &&
-          item.id !== (editItem ? editItem.id : null),
+    if (!formData.name || !formData.categoryId || !formData.price) {
+      showSnackbar(
+        'Please fill in all required fields (Name, Category, Price)',
+        'error'
       );
+      return;
+    }
 
-      if (isDuplicate) {
-        setDuplicateDialogOpen(true);
-        return;
-      }
+    const dataToSend = {
+      ...formData,
+      categoryId: Number(formData.categoryId),
+      price: Number(formData.price),
+    };
 
+    const isDuplicate = items.some(
+      (item) =>
+        item.name.toLowerCase() === dataToSend.name.toLowerCase() &&
+        item.id !== (editItem ? editItem.id : null)
+    );
+
+    if (isDuplicate) {
+      setDuplicateDialogOpen(true);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
       if (editItem) {
         await menuService.update(editItem.id, dataToSend);
-        setSnackbar({
-          open: true,
-          message: 'Menu item updated successfully!',
-          severity: 'success',
-        });
+        showSnackbar('Menu item updated successfully!', 'success');
       } else {
         await menuService.create(dataToSend);
-        setSnackbar({
-          open: true,
-          message: 'Menu item created successfully!',
-          severity: 'success',
-        });
+        showSnackbar('Menu item created successfully!', 'success');
       }
       setOpen(false);
       loadData();
       resetForm();
     } catch (error) {
-      console.error('Failed to save menu item:', error);
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.data ||
         'Failed to save menu item. Please check all fields and try again.';
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error',
-      });
+      showSnackbar(errorMessage, 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -154,32 +161,25 @@ const MenuManagement = () => {
     const { id } = deleteConfirmation;
     if (!id) return;
 
+    setIsDeleting(id);
+    setDeleteConfirmation({ open: false, id: null });
     try {
       await menuService.delete(id);
-      setSnackbar({
-        open: true,
-        message: 'Menu item deleted successfully!',
-        severity: 'success',
-      });
+      showSnackbar('Menu item deleted successfully!', 'success');
       loadData();
     } catch (error) {
-      console.error('Failed to delete menu item:', error);
-      setSnackbar({
-        open: true,
-        message:
-          error.response?.data?.message ||
+      showSnackbar(
+        error.response?.data?.message ||
           'Failed to delete menu item. Please try again.',
-        severity: 'error',
-      });
+        'error'
+      );
     } finally {
-      setDeleteConfirmation({ open: false, id: null });
+      setIsDeleting(null);
     }
   };
 
   const handleCloseSnackbar = (event, reason) => {
-    if (reason === 'clickaway') {
-      return;
-    }
+    if (reason === 'clickaway') return;
     setSnackbar({ ...snackbar, open: false });
   };
 
@@ -200,7 +200,6 @@ const MenuManagement = () => {
   const openDialog = (item = null) => {
     if (item) {
       setEditItem(item);
-      // Properly map the item data to form format
       setFormData({
         name: item.name || '',
         categoryId: item.categoryId || item.category?.id || '',
@@ -225,7 +224,6 @@ const MenuManagement = () => {
 
   const handleAddIngredient = () => {
     const { inventoryItem, quantity } = newIngredient;
-    // Allow adding if we have a selected item OR a typed name (string)
     if ((!inventoryItem && !newIngredient.inputValue) || !quantity) return;
 
     const qty = parseFloat(quantity);
@@ -233,12 +231,10 @@ const MenuManagement = () => {
 
     let ingredientToAdd = {};
 
-    // Check if it's an existing item object or a new string
     if (
       typeof inventoryItem === 'string' ||
       (inventoryItem && !inventoryItem.id)
     ) {
-      // It's a new item name typed in
       const name =
         typeof inventoryItem === 'string'
           ? inventoryItem
@@ -247,18 +243,16 @@ const MenuManagement = () => {
         inventoryItemId: null,
         inventoryItemName: name,
         quantityRequired: qty,
-        unit: 'unit', // Default for new items created here
+        unit: 'unit',
       };
     } else if (inventoryItem && inventoryItem.id) {
-      // Existing item selected
       ingredientToAdd = {
         inventoryItemId: inventoryItem.id,
         inventoryItemName: inventoryItem.name,
         quantityRequired: qty,
-        unit: inventoryItem.unit, // Use existing unit from inventory
+        unit: inventoryItem.unit,
       };
     } else {
-      // Fallback for typed value if inventoryItem is null but inputValue exists (Autocomplete behavior)
       ingredientToAdd = {
         inventoryItemId: null,
         inventoryItemName: newIngredient.inputValue,
@@ -280,11 +274,18 @@ const MenuManagement = () => {
     setFormData({ ...formData, ingredients: updatedIngredients });
   };
 
+  const displayedItems = items.filter(
+    (item) =>
+      selectedCategory === 'ALL' ||
+      item.categoryId === selectedCategory ||
+      item.category?.id === selectedCategory
+  );
+
   return (
     <Layout title="Menu Management">
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={1000}
+        autoHideDuration={5000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
@@ -356,24 +357,31 @@ const MenuManagement = () => {
                 <TableCell sx={{ minWidth: 120 }}>Category</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>Price</TableCell>
                 <TableCell sx={{ minWidth: 80 }}>Active</TableCell>
-                {/* Only show Actions column to admins */}
                 {hasRole('ROLE_ADMIN') && (
                   <TableCell sx={{ minWidth: 150 }}>Actions</TableCell>
                 )}
               </TableRow>
             </TableHead>
             <TableBody>
-              {items
-                .filter(
-                  (item) =>
-                    selectedCategory === 'ALL' ||
-                    item.categoryId === selectedCategory ||
-                    item.category?.id === selectedCategory,
-                )
-                .map((item) => (
+              {isPageLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: hasRole('ROLE_ADMIN') ? 6 : 5 }).map((__, j) => (
+                      <TableCell key={j}><Skeleton variant={j === 0 ? 'rectangular' : 'text'} height={j === 0 ? 60 : undefined} width={j === 0 ? 60 : undefined} /></TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : displayedItems.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={hasRole('ROLE_ADMIN') ? 6 : 5} align="center" sx={{ py: 4 }}>
+                    <Typography color="text.secondary">No menu items found.</Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                displayedItems.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>
-                      {item.imageUrl && (
+                      {item.imageUrl ? (
                         <img
                           src={item.imageUrl}
                           alt={item.name}
@@ -387,62 +395,72 @@ const MenuManagement = () => {
                             e.target.style.display = 'none';
                           }}
                         />
+                      ) : (
+                        <Box sx={{ width: 60, height: 60, bgcolor: 'grey.100', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Typography variant="caption" color="text.disabled">No img</Typography>
+                        </Box>
                       )}
                     </TableCell>
                     <TableCell>{item.name}</TableCell>
                     <TableCell>{item.categoryName}</TableCell>
-                    <TableCell>₹{item.price}</TableCell>
-                    <TableCell>{item.active ? 'Yes' : 'No'}</TableCell>
-                    {/* Only show Edit/Delete buttons to admins */}
+                    <TableCell>₹{Number(item.price).toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={item.active ? 'Active' : 'Inactive'}
+                        color={item.active ? 'success' : 'default'}
+                        size="small"
+                      />
+                    </TableCell>
                     {hasRole('ROLE_ADMIN') && (
                       <TableCell>
-                        <Button onClick={() => openDialog(item)}>Edit</Button>
+                        <Button
+                          onClick={() => openDialog(item)}
+                          disabled={isDeleting === item.id}
+                        >
+                          Edit
+                        </Button>
                         <Button
                           onClick={() => handleDeleteClick(item.id)}
                           color="error"
+                          disabled={isDeleting === item.id}
+                          startIcon={isDeleting === item.id ? <CircularProgress size={14} /> : null}
                         >
                           Delete
                         </Button>
                       </TableCell>
                     )}
                   </TableRow>
-                ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </Box>
       </Paper>
 
+      {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteConfirmation.open}
         onClose={() => setDeleteConfirmation({ open: false, id: null })}
       >
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-          <Typography>
-            Are you sure you want to delete this menu item?
-          </Typography>
+          <Typography>Are you sure you want to delete this menu item?</Typography>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => setDeleteConfirmation({ open: false, id: null })}
-          >
+          <Button onClick={() => setDeleteConfirmation({ open: false, id: null })}>
             Cancel
           </Button>
-          <Button
-            onClick={handleConfirmDelete}
-            color="error"
-            variant="contained"
-          >
+          <Button onClick={handleConfirmDelete} color="error" variant="contained">
             Delete
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Only show dialog to admins */}
+      {/* Add/Edit Dialog (Admin only) */}
       {hasRole('ROLE_ADMIN') && (
         <Dialog
           open={open}
-          onClose={() => setOpen(false)}
+          onClose={() => { if (!isSaving) setOpen(false); }}
           maxWidth="sm"
           fullWidth
         >
@@ -450,21 +468,21 @@ const MenuManagement = () => {
           <DialogContent>
             <TextField
               fullWidth
-              label="Name"
+              label="Name *"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               margin="normal"
+              disabled={isSaving}
             />
             <FormControl fullWidth margin="normal">
-              <InputLabel>Category</InputLabel>
+              <InputLabel>Category *</InputLabel>
               <Select
                 value={formData.categoryId}
-                label="Category"
+                label="Category *"
                 onChange={(e) =>
                   setFormData({ ...formData, categoryId: e.target.value })
                 }
+                disabled={isSaving}
               >
                 {categories.map((cat) => (
                   <MenuItem key={cat.id} value={cat.id}>
@@ -475,13 +493,14 @@ const MenuManagement = () => {
             </FormControl>
             <TextField
               fullWidth
-              label="Price"
+              label="Price *"
               type="number"
               value={formData.price}
               onChange={(e) =>
                 setFormData({ ...formData, price: e.target.value })
               }
               margin="normal"
+              disabled={isSaving}
             />
             <TextField
               fullWidth
@@ -493,6 +512,7 @@ const MenuManagement = () => {
                 setFormData({ ...formData, description: e.target.value })
               }
               margin="normal"
+              disabled={isSaving}
             />
             <TextField
               fullWidth
@@ -502,6 +522,7 @@ const MenuManagement = () => {
                 setFormData({ ...formData, imageUrl: e.target.value })
               }
               margin="normal"
+              disabled={isSaving}
             />
             <FormControlLabel
               control={
@@ -510,6 +531,7 @@ const MenuManagement = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, active: e.target.checked })
                   }
+                  disabled={isSaving}
                 />
               }
               label="Active"
@@ -541,6 +563,7 @@ const MenuManagement = () => {
                         inputValue: newInputValue,
                       });
                     }}
+                    disabled={isSaving}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -563,7 +586,7 @@ const MenuManagement = () => {
                         quantity: e.target.value,
                       })
                     }
-                    // Show unit as suffix if item selected
+                    disabled={isSaving}
                     InputProps={{
                       endAdornment: newIngredient.inventoryItem?.unit ? (
                         <Typography
@@ -582,6 +605,7 @@ const MenuManagement = () => {
                     onClick={handleAddIngredient}
                     fullWidth
                     sx={{ height: '100%' }}
+                    disabled={isSaving}
                   >
                     <Add />
                   </Button>
@@ -617,6 +641,7 @@ const MenuManagement = () => {
                               size="small"
                               color="error"
                               onClick={() => handleRemoveIngredient(idx)}
+                              disabled={isSaving}
                             >
                               <Delete fontSize="small" />
                             </IconButton>
@@ -630,14 +655,19 @@ const MenuManagement = () => {
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} variant="contained">
-              Save
+            <Button onClick={() => setOpen(false)} disabled={isSaving}>Cancel</Button>
+            <Button onClick={handleSave} variant="contained" disabled={isSaving}>
+              {isSaving ? (
+                <><CircularProgress size={18} sx={{ mr: 1, color: 'inherit' }} />Saving…</>
+              ) : (
+                'Save'
+              )}
             </Button>
           </DialogActions>
         </Dialog>
       )}
 
+      {/* Duplicate Item Dialog */}
       <Dialog
         open={duplicateDialogOpen}
         onClose={() => setDuplicateDialogOpen(false)}

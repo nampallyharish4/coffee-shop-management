@@ -8,6 +8,7 @@ import {
   Typography,
   Box,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 
@@ -15,6 +16,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -32,12 +34,19 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    const result = await login(email, password);
-    if (result.success) {
-      navigate(getHomePath(result.user), { replace: true });
-    } else {
-      setError(result.message);
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        navigate(getHomePath(result.user), { replace: true });
+      } else {
+        setError(result.message || 'Login failed. Please check your credentials.');
+      }
+    } catch {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -84,6 +93,7 @@ const Login = () => {
               onChange={(e) => setEmail(e.target.value)}
               margin="normal"
               required
+              disabled={isLoading}
             />
             <TextField
               fullWidth
@@ -93,15 +103,24 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
               margin="normal"
               required
+              disabled={isLoading}
             />
             <Button
               fullWidth
               type="submit"
               variant="contained"
               color="primary"
-              sx={{ mt: 3 }}
+              sx={{ mt: 3, py: 1.5, position: 'relative' }}
+              disabled={isLoading}
             >
-              Login
+              {isLoading ? (
+                <>
+                  <CircularProgress size={22} sx={{ color: 'inherit', mr: 1 }} />
+                  Signing in…
+                </>
+              ) : (
+                'Login'
+              )}
             </Button>
           </form>
         </Paper>

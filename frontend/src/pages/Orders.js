@@ -23,6 +23,8 @@ import {
   Snackbar,
   Alert,
   GlobalStyles,
+  Skeleton,
+  CircularProgress,
 } from '@mui/material';
 import {
   KeyboardArrowDown,
@@ -97,6 +99,8 @@ const Orders = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Helper to get local date string YYYY-MM-DD
   const getLocalDateString = (date = new Date()) => {
@@ -115,10 +119,10 @@ const Orders = () => {
   // Default to today (Local Time)
   const [selectedDate, setSelectedDate] = useState(getLocalDateString());
 
-  const loadOrders = async () => {
+  const loadOrders = React.useCallback(async (showLoading = true) => {
+    if (showLoading) setIsLoading(true);
     try {
       const response = await orderService.getAll();
-      // Sort by created date, newest first
       const sortedOrders = response.data.data.sort((a, b) => {
         const dateA = new Date(a.createdAt);
         const dateB = new Date(b.createdAt);
@@ -127,8 +131,10 @@ const Orders = () => {
       setOrders(sortedOrders);
     } catch (error) {
       console.error('Failed to load orders:', error);
+    } finally {
+      if (showLoading) setIsLoading(false);
     }
-  };
+  }, []);
 
   const filterOrders = React.useCallback(() => {
     let filtered = [];
@@ -230,10 +236,10 @@ const Orders = () => {
   );
 
   useEffect(() => {
-    loadOrders();
-    const interval = setInterval(loadOrders, 10000); // Refresh every 10 seconds
+    loadOrders(true);
+    const interval = setInterval(() => loadOrders(false), 10000); // Refresh every 10 seconds without loading spinner
     return () => clearInterval(interval);
-  }, []);
+  }, [loadOrders]);
 
   // Enforce restricted view
   useEffect(() => {
@@ -287,6 +293,7 @@ const Orders = () => {
       return;
     }
 
+    setIsCancelling(true);
     try {
       await orderService.cancel(orderToCancel.id, cancelReason.trim());
       setCancelDialogOpen(false);
@@ -297,13 +304,15 @@ const Orders = () => {
         message: 'Order cancelled successfully',
         type: 'success',
       });
-      loadOrders(); // Refresh orders
+      loadOrders(true); // Refresh orders
     } catch (error) {
       setToast({
         open: true,
         message: error.response?.data?.message || 'Failed to cancel order',
         type: 'error',
       });
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -431,7 +440,15 @@ const Orders = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {displayOrders.length === 0 ? (
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: 8 }).map((__, j) => (
+                      <TableCell key={j}><Skeleton variant="text" /></TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : displayOrders.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                     <Typography variant="body1" color="text.secondary">
@@ -1047,10 +1064,13 @@ const Orders = () => {
         <DialogActions>
           <Button
             onClick={() => {
-              setCancelDialogOpen(false);
-              setCancelReason('');
-              setOrderToCancel(null);
+              if (!isCancelling) {
+                setCancelDialogOpen(false);
+                setCancelReason('');
+                setOrderToCancel(null);
+              }
             }}
+            disabled={isCancelling}
           >
             Keep Order
           </Button>
@@ -1059,12 +1079,13 @@ const Orders = () => {
             variant="contained"
             color="error"
             disabled={
+              isCancelling ||
               !cancelReason.trim() ||
               !orderToCancel ||
               !canCancelOrder(orderToCancel)
             }
           >
-            Cancel Order
+            {isCancelling ? <><CircularProgress size={18} sx={{ mr: 1, color: 'inherit' }} />Cancelling…</> : 'Cancel Order'}
           </Button>
         </DialogActions>
       </Dialog>

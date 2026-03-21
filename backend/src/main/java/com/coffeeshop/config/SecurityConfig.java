@@ -75,6 +75,8 @@ public class SecurityConfig {
                 .requestMatchers("/", "/index.html", "/static/**", "/*.js", "/*.css", "/*.json", "/*.ico", "/manifest.json").permitAll()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/menu/active", "/api/categories").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").hasRole("ADMIN")
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/menu/**").hasAnyRole("ADMIN", "CASHIER")
@@ -86,19 +88,8 @@ public class SecurityConfig {
             )
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .headers(headers -> headers
-                .contentSecurityPolicy(csp -> csp
-                    .policyDirectives("default-src 'self'; " +
-                                    "script-src 'self'; " +
-                                    "style-src 'self' https://fonts.googleapis.com; " +
-                                    "font-src 'self' https://fonts.gstatic.com data:; " +
-                                    "img-src 'self' data:; " +
-                                    "connect-src 'self'; " +
-                                    "object-src 'none'; " +
-                                    "base-uri 'self'; " +
-                                    "form-action 'self'; " +
-                                    "frame-ancestors 'none';"))
                 .frameOptions(frameOptions -> frameOptions.deny())
-                .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                .xssProtection(xss -> xss.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
                 .contentTypeOptions(contentTypeOptions -> {})
             );
 
@@ -119,11 +110,13 @@ public class SecurityConfig {
             // Default to localhost for development only
             configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
-                "http://localhost:8081"
+                "http://127.0.0.1:3000",
+                "http://localhost:8081",
+                "http://127.0.0.1:8081"
             ));
         }
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
